@@ -782,6 +782,10 @@ export class Ext extends Ecs.System<ExtEvent> {
             this.exit_modes();
             this.restack();
 
+            if (this.settings.mouse_cursor_follows_active_workspace()) {
+                this.warp_mouse_to_primary_monitor();
+            }
+
             const activate_window = (window: Window.ShellWindow) => {
                 this.on_focused(window);
                 window.activate(true);
@@ -1383,6 +1387,25 @@ export class Ext extends Ecs.System<ExtEvent> {
             const cy = target.y + Math.round(target.height / 2);
             global.stage.get_context().get_backend().get_default_seat().warp_pointer(cx, cy);
         }
+    }
+
+    /** Warps the mouse cursor to the center of the primary monitor */
+    warp_mouse_to_primary_monitor() {
+        const [pointer_x, pointer_y] = global.get_pointer();
+        const primary = display.get_primary_monitor();
+        const cursor = Mtk ?
+            new Mtk.Rectangle({ x: pointer_x, y: pointer_y, width: 1, height: 1 }) :
+            new Meta.Rectangle({ x: pointer_x, y: pointer_y, width: 1, height: 1 });
+        const current_monitor = display.get_monitor_index_for_rect(cursor);
+
+        if (current_monitor === primary) return;
+
+        const geo = display.get_monitor_geometry(primary);
+        if (!geo) return;
+
+        const cx = geo.x + Math.round(geo.width / 2);
+        const cy = geo.y + Math.round(geo.height / 2);
+        global.stage.get_context().get_backend().get_default_seat().warp_pointer(cx, cy);
     }
 
     /** Moves the focused window across workspaces and displays */
