@@ -124,7 +124,10 @@ export class Tiler {
             }
         })();
 
-        return !!neighbor && !!ext.auto_tiler?.attached.get(neighbor.entity) && !ext.contains_tag(neighbor.entity, Tags.Floating);
+        return !!neighbor &&
+            neighbor.meta.get_monitor() === window.meta.get_monitor() &&
+            !!ext.auto_tiler?.attached.get(neighbor.entity) &&
+            !ext.contains_tag(neighbor.entity, Tags.Floating);
     }
 
     resize_overlay(ext: Ext, rect: Rectangle, direction: Direction) {
