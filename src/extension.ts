@@ -789,7 +789,7 @@ export class Ext extends Ecs.System<ExtEvent> {
             };
 
             const focused = this.focus_window();
-            if (focused && focused.same_workspace()) {
+            if (focused && focused.same_workspace() && focused.same_monitor()) {
                 activate_window(focused);
                 return;
             }
@@ -799,7 +799,12 @@ export class Ext extends Ecs.System<ExtEvent> {
             const active = this.workspace_active.get(workspace_id);
             if (active) {
                 const window = this.windows.get(active);
-                if (window && window.meta.get_workspace().index() == workspace_id && !window.meta.minimized) {
+                if (
+                    window &&
+                    window.meta.get_workspace().index() == workspace_id &&
+                    window.same_monitor() &&
+                    !window.meta.minimized
+                ) {
                     activate_window(window);
                     return;
                 }
@@ -810,7 +815,7 @@ export class Ext extends Ecs.System<ExtEvent> {
             if (workspace) {
                 for (const win of workspace.list_windows()) {
                     const window = this.get_window(win);
-                    if (window && !window.meta.minimized) {
+                    if (window && window.same_monitor() && !window.meta.minimized) {
                         activate_window(window);
                         return;
                     }
