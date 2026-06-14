@@ -755,6 +755,16 @@ export class Ext extends Ecs.System<ExtEvent> {
         return Rect.Rectangle.from_meta(meta as Rectangular);
     }
 
+    center_rect_on_monitor(monitor: number, rect: Rectangular): Rectangle {
+        const work_area = this.monitor_work_area(monitor);
+        const centered = Rectangle.from_meta(rect);
+
+        centered.x = work_area.x + Math.round((work_area.width - centered.width) / 2);
+        centered.y = work_area.y + Math.round((work_area.height - centered.height) / 2);
+
+        return centered;
+    }
+
     /** Centers a floating window on its current monitor's work area, resized to configured percentages */
     center_floating(win: Window.ShellWindow) {
         const monitor = win.meta.get_monitor();
@@ -765,11 +775,9 @@ export class Ext extends Ecs.System<ExtEvent> {
 
         const width = Math.round(work_area.width * width_pct / 100);
         const height = Math.round(work_area.height * height_pct / 100);
+        const centered = this.center_rect_on_monitor(monitor, new Rectangle([0, 0, width, height]));
 
-        const x = work_area.x + Math.round((work_area.width - width) / 2);
-        const y = work_area.y + Math.round((work_area.height - height) / 2);
-
-        win.move(this, { x, y, width, height });
+        win.move(this, centered);
     }
 
     monitor_area(monitor: number): Rectangle | null {

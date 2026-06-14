@@ -149,7 +149,8 @@ Activating this enables the following behaviors:
   - In auto-tile mode, this will move the window
 - `Shift` + `<Direction>`
   - In default mode, this will resize the overlay in the given direction
-  - In auto-tile mode, this will resize the active window in the given direction
+  - In auto-tile mode, this will resize the active tiled window in the given direction
+  - For floating windows, `h`/`l` decrease/increase width and `j`/`k` decrease/increase height while keeping the window centered
 - `Ctrl` + `<Direction>`
   - Selects a window in the given direction of the overlay
   - When `Return` is pressed, window positions will be swapped

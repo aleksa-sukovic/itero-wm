@@ -142,6 +142,42 @@ export class Tiler {
         this.change(ext.overlay, rect, 0, 0, 0, 0);
     }
 
+    resize_floating(ext: Ext, direction: Direction) {
+        const window = this.window ? ext.windows.get(this.window) : null;
+        if (!window) return;
+
+        if (ext.auto_tiler && !ext.contains_tag(window.entity, Tags.Floating)) {
+            this.swap_window = null;
+            this.rect_by_active_area(ext, (_monitor, rect) => {
+                this.resize_overlay(ext, rect, direction);
+            });
+            return;
+        }
+
+        this.swap_window = null;
+        this.rect_by_active_area(ext, (_monitor, rect) => {
+            const overlay = new Rect.Rectangle([rect.x, rect.y, ext.overlay.width, ext.overlay.height]);
+
+            switch (direction) {
+                case Direction.Left:
+                    overlay.width -= rect.width;
+                    break;
+                case Direction.Right:
+                    overlay.width += rect.width;
+                    break;
+                case Direction.Up:
+                    overlay.height += rect.height;
+                    break;
+                case Direction.Down:
+                    overlay.height -= rect.height;
+                    break;
+            }
+
+            this.change(overlay, rect, 0, 0, 0, 0);
+            ext.set_overlay(ext.center_rect_on_monitor(window.meta.get_monitor(), overlay));
+        });
+    }
+
     change(overlay: Rectangular, rect: Rectangle, dx: number, dy: number, dw: number, dh: number): Tiler {
         let changed = new Rect.Rectangle([
             overlay.x + dx * rect.width,
@@ -713,10 +749,7 @@ export class Tiler {
         if (ext.auto_tiler && !ext.contains_tag(this.window, Tags.Floating)) {
             this.resize_auto(ext, direction);
         } else {
-            this.swap_window = null;
-            this.rect_by_active_area(ext, (_monitor, rect) => {
-                this.resize_overlay(ext, rect, direction);
-            });
+            this.resize_floating(ext, direction);
         }
 
         this.resizing_window = false;
@@ -822,7 +855,17 @@ export class Tiler {
                 if (!tree_swapped) {
                     ext.size_signals_block(meta);
                     const meta_entity = this.window;
-                    meta.move(ext, ext.overlay, () => {
+                    let target = Rect.Rectangle.from_meta(ext.overlay);
+                    const current = meta.rect();
+
+                    if (
+                        (!ext.auto_tiler || ext.contains_tag(meta_entity, Tags.Floating)) &&
+                        (target.width !== current.width || target.height !== current.height)
+                    ) {
+                        target = ext.center_rect_on_monitor(meta.meta.get_monitor(), target);
+                    }
+
+                    meta.move(ext, target, () => {
                         ext.size_signals_unblock(meta);
                         ext.add_tag(meta_entity, Tags.Tiled);
                     });
