@@ -255,6 +255,7 @@ export class Keybindings {
                     });
                 }
             },
+            'toggle-top-bar': () => ext.toggle_top_bar(),
             'warp-mouse-left': () => ext.warp_mouse_to_monitor(Meta.DisplayDirection.LEFT),
             'warp-mouse-right': () => ext.warp_mouse_to_monitor(Meta.DisplayDirection.RIGHT),
             'warp-mouse-up': () => ext.warp_mouse_to_monitor(Meta.DisplayDirection.UP),

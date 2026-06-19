@@ -305,6 +305,11 @@
             <summary>Maximize focused window respecting gaps</summary>
         </key>
 
+        <key type="as" name="toggle-top-bar">
+            <default><![CDATA[['<Shift><Super>m']]]></default>
+            <summary>Toggle the GNOME top bar</summary>
+        </key>
+
         <!-- Float Size Configuration -->
         <key type="u" name="float-default-width-percentage">
             <default>50</default>

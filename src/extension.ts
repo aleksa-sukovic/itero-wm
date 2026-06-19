@@ -2342,6 +2342,14 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
     }
 
+    toggle_top_bar() {
+        if (panel.visible) {
+            panel.hide();
+        } else {
+            panel.show();
+        }
+    }
+
     auto_tile_off() {
         this.settings.set_edge_tiling(true);
         this.hide_all_borders();
