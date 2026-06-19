@@ -138,6 +138,12 @@ export class Ext extends Ecs.System<ExtEvent> {
     /** The currently-loaded theme variant */
     current_style: Style = Style.Dark;
 
+    /** Tracks whether the user wants the top bar visible outside overview */
+    top_bar_visible: boolean = panel.visible;
+
+    /** Tracks overview visibility so the top bar can be forced on while browsing workspaces */
+    overview_visible: boolean = overview.visible;
+
     /** Set when the display configuration has been triggered for execution */
     displays_updating: SignalID | null = null;
 
@@ -418,6 +424,10 @@ export class Ext extends Ecs.System<ExtEvent> {
 
                     case GlobalEvent.OverviewShown:
                         this.on_overview_shown();
+                        break;
+
+                    case GlobalEvent.OverviewHidden:
+                        this.on_overview_hidden();
                         break;
                 }
 
@@ -1788,6 +1798,11 @@ export class Ext extends Ecs.System<ExtEvent> {
     on_overview_shown() {
         this.exit_modes();
         this.unset_grab_op();
+        this.sync_top_bar_visibility();
+    }
+
+    on_overview_hidden() {
+        this.sync_top_bar_visibility();
     }
 
     on_show_window_titles() {
@@ -2084,10 +2099,12 @@ export class Ext extends Ecs.System<ExtEvent> {
         });
 
         this.connect(overview, 'showing', () => {
+            this.overview_visible = true;
             this.register(Events.global(GlobalEvent.OverviewShown));
         });
 
         this.connect(overview, 'hiding', () => {
+            this.overview_visible = false;
             const window = this.focus_window();
             if (window) {
                 this.on_focused(window);
@@ -2343,10 +2360,18 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     toggle_top_bar() {
-        if (panel.visible) {
-            panel.hide();
-        } else {
+        this.top_bar_visible = !this.top_bar_visible;
+        this.sync_top_bar_visibility();
+    }
+
+    sync_top_bar_visibility() {
+        const should_show = this.overview_visible || this.top_bar_visible;
+        if (panel.visible === should_show) return;
+
+        if (should_show) {
             panel.show();
+        } else {
+            panel.hide();
         }
 
         GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
