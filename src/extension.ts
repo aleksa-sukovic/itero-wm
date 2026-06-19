@@ -2348,6 +2348,11 @@ export class Ext extends Ecs.System<ExtEvent> {
         } else {
             panel.show();
         }
+
+        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+            this.register_fn(() => this.update_display_configuration(true));
+            return false;
+        });
     }
 
     auto_tile_off() {
@@ -2454,6 +2459,8 @@ export class Ext extends Ecs.System<ExtEvent> {
             const work_area = ext.monitor_work_area(primary_display);
 
             if (!area || !work_area) return false;
+
+            if (!panel.visible) return true;
 
             return !(area.width === work_area.width && area.height === work_area.height);
         };
