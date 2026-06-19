@@ -38,6 +38,11 @@
             <summary>Handle minimized to tray windows</summary>
         </key>
 
+        <key type="b" name="top-bar-visible">
+            <default>true</default>
+            <summary>Show the GNOME top bar outside overview</summary>
+        </key>
+
         <key type="b" name="mouse-cursor-follows-active-window">
             <default>true</default>
             <summary>Move cursor to active window when navigating with keyboard shortcuts or touchpad gestures</summary>
@@ -308,6 +313,11 @@
         <key type="as" name="toggle-top-bar">
             <default><![CDATA[['<Shift><Super>m']]]></default>
             <summary>Toggle the GNOME top bar</summary>
+        </key>
+
+        <key type="as" name="refresh-tiling">
+            <default><![CDATA[['<Shift><Super>r']]]></default>
+            <summary>Refresh the current tiling layout</summary>
         </key>
 
         <!-- Float Size Configuration -->

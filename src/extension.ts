@@ -754,6 +754,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.set_gap_outer(this.settings.gap_outer());
         this.gap_inner_prev = this.gap_inner;
         this.gap_outer_prev = this.gap_outer;
+        this.top_bar_visible = this.settings.top_bar_visible();
 
         this.column_size = this.settings.column_size() * this.dpi;
         this.row_size = this.settings.row_size() * this.dpi;
@@ -2359,8 +2360,16 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
     }
 
+    refresh_tiling() {
+        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+            this.register_fn(() => this.update_display_configuration(true));
+            return false;
+        });
+    }
+
     toggle_top_bar() {
         this.top_bar_visible = !this.top_bar_visible;
+        this.settings.set_top_bar_visible(this.top_bar_visible);
         this.sync_top_bar_visibility();
     }
 
@@ -2374,10 +2383,7 @@ export class Ext extends Ecs.System<ExtEvent> {
             panel.hide();
         }
 
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-            this.register_fn(() => this.update_display_configuration(true));
-            return false;
-        });
+        this.refresh_tiling();
     }
 
     auto_tile_off() {
@@ -2871,6 +2877,7 @@ export default class PopShellExtension extends Extension {
 
         ext.injections_add();
         ext.signals_attach();
+        ext.sync_top_bar_visibility();
 
         disable_window_attention_handler();
 
