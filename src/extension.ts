@@ -2360,9 +2360,22 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
     }
 
-    refresh_tiling() {
+    /// Reflows tiled windows onto the current monitor work areas, e.g. after the top bar is toggled.
+    update_workareas() {
         GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
             this.register_fn(() => this.update_display_configuration(true));
+            return false;
+        });
+    }
+
+    /// Fully untiles and re-tiles every window, fixing any layout that has drifted out of sync.
+    refresh_tiling() {
+        if (!this.settings.tile_by_default()) return;
+
+        this.auto_tile_off();
+
+        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+            this.register_fn(() => this.auto_tile_on());
             return false;
         });
     }
@@ -2383,7 +2396,7 @@ export class Ext extends Ecs.System<ExtEvent> {
             panel.hide();
         }
 
-        this.refresh_tiling();
+        this.update_workareas();
     }
 
     auto_tile_off() {
