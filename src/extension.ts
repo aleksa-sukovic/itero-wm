@@ -2753,6 +2753,18 @@ export class Ext extends Ecs.System<ExtEvent> {
             const actor = meta.get_compositor_private();
             if (!actor) return null;
 
+            const wm_class = meta.get_wm_class();
+            const wm_title = meta.get_title();
+
+            // N.B. Wl-clipboard creates a temporary transparent toplevel on Mutter.
+            // Ignore it so clipboard operations do not perturb the tiling tree.
+            if (
+                (wm_class && /wl-clipboard|io\.github\.bugaevc\.wl-clipboard/i.test(wm_class)) ||
+                (wm_title && /^wl-clipboard$/i.test(wm_title))
+            ) {
+                return null;
+            }
+
             let window_app: any, name: string;
 
             try {
