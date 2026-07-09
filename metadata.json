@@ -1,9 +1,9 @@
 {
-    "name": "Pop Shell",
-    "description": "Pop Shell",
+    "name": "Itero WM",
+    "description": "Itero WM",
     "version": 2,
-    "uuid": "pop-shell@system76.com",
-    "settings-schema": "org.gnome.shell.extensions.pop-shell",
+    "uuid": "itero-wm@itero",
+    "settings-schema": "org.gnome.shell.extensions.itero-wm",
     "shell-version": [
         "45",
         "46",

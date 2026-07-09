@@ -1,6 +1,7 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: pop-shell
-Source: https://github.com/pop-os/shell
+Upstream-Name: Itero WM
+Source: https://github.com/aleksa-sukovic/itero-wm
+Comment: Itero WM is derived from System76 Pop Shell: https://github.com/pop-os/shell
 
 Files: *
 Copyright: 2020 System76

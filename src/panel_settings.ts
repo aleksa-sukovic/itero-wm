@@ -30,14 +30,14 @@ export class Indicator {
     entry_gaps: any;
 
     constructor(ext: Ext) {
-        this.button = new Button(0.0, _('Pop Shell Settings'));
+        this.button = new Button(0.0, _('Itero WM Settings'));
 
         ext.button = this.button;
 
         // Add icon so the button isn't an empty space when briefly shown
         const path = get_current_path();
         const icon = new St.Icon({
-            gicon: Gio.icon_new_for_string(`${path}/icons/pop-shell-auto-on-symbolic.svg`),
+            gicon: Gio.icon_new_for_string(`${path}/icons/itero-wm-auto-on-symbolic.svg`),
             style_class: 'system-status-icon',
         });
         this.button.add_child(icon);
@@ -104,7 +104,7 @@ function menu_separator(text: any): any {
 function settings_button(menu: any): any {
     let item = new PopupMenuItem(_('View All'));
     item.connect('activate', () => {
-        let path: string | null = GLib.find_program_in_path('pop-shell-shortcuts');
+        let path: string | null = GLib.find_program_in_path('itero-wm-shortcuts');
         if (path) {
             spawn([path]);
         } else {
@@ -151,7 +151,7 @@ function shortcuts(menu: any): any {
     let item = new PopupBaseMenuItem();
     item.add_child(widget);
     item.connect('activate', () => {
-        let path: string | null = GLib.find_program_in_path('pop-shell-shortcuts');
+        let path: string | null = GLib.find_program_in_path('itero-wm-shortcuts');
         if (path) {
             spawn([path]);
         } else {

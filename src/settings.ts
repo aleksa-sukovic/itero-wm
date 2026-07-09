@@ -42,7 +42,7 @@ function settings_new_schema(schema: string): Settings {
 
     if (!schemaObj) {
         throw new Error(
-            'Schema ' + schema + ' could not be found for extension pop-shell' + '. Please check your installation.',
+            'Schema ' + schema + ' could not be found for extension itero-wm' + '. Please check your installation.',
         );
     }
 
@@ -74,7 +74,7 @@ const FLOAT_DEFAULT_WIDTH_PERCENTAGE = 'float-default-width-percentage';
 const FLOAT_DEFAULT_HEIGHT_PERCENTAGE = 'float-default-height-percentage';
 
 export class ExtensionSettings {
-    ext: Settings = settings_new_schema('org.gnome.shell.extensions.pop-shell');
+    ext: Settings = settings_new_schema('org.gnome.shell.extensions.itero-wm');
     int: Settings | null = settings_new_id('org.gnome.desktop.interface');
     mutter: Settings | null = settings_new_id('org.gnome.mutter');
     shell: Settings | null = settings_new_id('org.gnome.shell.extensions.user-theme');

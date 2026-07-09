@@ -294,17 +294,17 @@ export class Keybindings {
 
             'tile-move-right-global': () => ext.tiler.move_right(ext, ext.focus_window()?.entity),
 
-            'pop-monitor-left': () => ext.move_monitor(Meta.DisplayDirection.LEFT),
+            'itero-monitor-left': () => ext.move_monitor(Meta.DisplayDirection.LEFT),
 
-            'pop-monitor-right': () => ext.move_monitor(Meta.DisplayDirection.RIGHT),
+            'itero-monitor-right': () => ext.move_monitor(Meta.DisplayDirection.RIGHT),
 
-            'pop-monitor-up': () => ext.move_monitor(Meta.DisplayDirection.UP),
+            'itero-monitor-up': () => ext.move_monitor(Meta.DisplayDirection.UP),
 
-            'pop-monitor-down': () => ext.move_monitor(Meta.DisplayDirection.DOWN),
+            'itero-monitor-down': () => ext.move_monitor(Meta.DisplayDirection.DOWN),
 
-            'pop-workspace-up': () => ext.move_workspace(Meta.DisplayDirection.UP),
+            'itero-workspace-up': () => ext.move_workspace(Meta.DisplayDirection.UP),
 
-            'pop-workspace-down': () => ext.move_workspace(Meta.DisplayDirection.DOWN),
+            'itero-workspace-down': () => ext.move_workspace(Meta.DisplayDirection.DOWN),
 
             'maximize-with-gaps': () => {
                 const win = ext.focus_window();

@@ -115,5 +115,5 @@ if gnome-extensions list | grep native-window; then
     gnome-extensions enable $(gnome-extensions list | grep native-window)
 fi
 
-# Workspaces spanning displays works better with Pop Shell
+# Workspaces spanning displays works better with Itero WM
 dconf write /org/gnome/mutter/workspaces-only-on-primary false

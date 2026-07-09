@@ -51,7 +51,7 @@ export var ShortcutOverlay = GObject.registerClass(
 
         _init(title: string, columns: Array<Column>) {
             super.init({
-                styleClass: 'pop-shell-shortcuts',
+                styleClass: 'itero-wm-shortcuts',
                 destroyOnClose: false,
                 shellReactive: true,
                 shouldFadeIn: true,
@@ -59,13 +59,13 @@ export var ShortcutOverlay = GObject.registerClass(
             });
 
             let columns_layout = new St.BoxLayout({
-                styleClass: 'pop-shell-shortcuts-columns',
+                styleClass: 'itero-wm-shortcuts-columns',
                 horizontal: true,
             });
 
             for (const column of columns) {
                 let column_layout = new St.BoxLayout({
-                    styleClass: 'pop-shell-shortcuts-column',
+                    styleClass: 'itero-wm-shortcuts-column',
                 });
 
                 for (const section of column.sections) {
@@ -77,7 +77,7 @@ export var ShortcutOverlay = GObject.registerClass(
 
             this.add(
                 new St.Label({
-                    styleClass: 'pop-shell-shortcuts-title',
+                    styleClass: 'itero-wm-shortcuts-title',
                     text: title,
                 }),
             );
@@ -89,7 +89,7 @@ export var ShortcutOverlay = GObject.registerClass(
 
         gen_combination(combination: Array<string>) {
             let layout = new St.BoxLayout({
-                styleClass: 'pop-shell-binding',
+                styleClass: 'itero-wm-binding',
                 horizontal: true,
             });
 
@@ -102,12 +102,12 @@ export var ShortcutOverlay = GObject.registerClass(
 
         gen_section(section: Section) {
             let layout = new St.BoxLayout({
-                styleclass: 'pop-shell-section',
+                styleclass: 'itero-wm-section',
             });
 
             layout.add(
                 new St.Label({
-                    styleClass: 'pop-shell-section-header',
+                    styleClass: 'itero-wm-section-header',
                     text: section.header,
                 }),
             );
@@ -122,7 +122,7 @@ export var ShortcutOverlay = GObject.registerClass(
 
         gen_shortcut(shortcut: Shortcut) {
             let layout = new St.BoxLayout({
-                styleClass: 'pop-shell-shortcut',
+                styleClass: 'itero-wm-shortcut',
                 horizontal: true,
             });
 
