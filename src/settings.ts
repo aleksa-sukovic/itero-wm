@@ -54,22 +54,17 @@ const ACTIVE_HINT_BORDER_RADIUS = 'active-hint-border-radius';
 const STACKING_WITH_MOUSE = 'stacking-with-mouse';
 const COLUMN_SIZE = 'column-size';
 const EDGE_TILING = 'edge-tiling';
-const FULLSCREEN_LAUNCHER = 'fullscreen-launcher';
+const DISABLE_ACTIVE_BORDER_ON_FLOAT = 'disable-active-border-on-float';
 const GAP_INNER = 'gap-inner';
 const GAP_OUTER = 'gap-outer';
 const ROW_SIZE = 'row-size';
-const SHOW_TITLE = 'show-title';
-const SMART_GAPS = 'smart-gaps';
 const SNAP_TO_GRID = 'snap-to-grid';
-const TILE_BY_DEFAULT = 'tile-by-default';
 const HINT_COLOR_RGBA = 'hint-color-rgba';
 const DEFAULT_RGBA_COLOR = 'rgba(251, 184, 108, 1)'; //pop-orange
 const LOG_LEVEL = 'log-level';
-const SHOW_SKIPTASKBAR = 'show-skip-taskbar';
 const TOP_BAR_VISIBLE = 'top-bar-visible';
 const MOUSE_CURSOR_FOLLOWS_ACTIVE_WINDOW = 'mouse-cursor-follows-active-window';
 const MOUSE_CURSOR_FOCUS_LOCATION = 'mouse-cursor-focus-location';
-const MAX_WINDOW_WIDTH = 'max-window-width';
 const FLOAT_DEFAULT_WIDTH_PERCENTAGE = 'float-default-width-percentage';
 const FLOAT_DEFAULT_HEIGHT_PERCENTAGE = 'float-default-height-percentage';
 
@@ -101,8 +96,8 @@ export class ExtensionSettings {
         return this.mutter ? this.mutter.get_boolean('dynamic-workspaces') : false;
     }
 
-    fullscreen_launcher(): boolean {
-        return this.ext.get_boolean(FULLSCREEN_LAUNCHER);
+    disable_active_border_on_float(): boolean {
+        return this.ext.get_boolean(DISABLE_ACTIVE_BORDER_ON_FLOAT);
     }
 
     gap_inner(): number {
@@ -141,20 +136,8 @@ export class ExtensionSettings {
         return this.ext.get_uint(ROW_SIZE);
     }
 
-    show_title(): boolean {
-        return this.ext.get_boolean(SHOW_TITLE);
-    }
-
-    smart_gaps(): boolean {
-        return this.ext.get_boolean(SMART_GAPS);
-    }
-
     snap_to_grid(): boolean {
         return this.ext.get_boolean(SNAP_TO_GRID);
-    }
-
-    tile_by_default(): boolean {
-        return this.ext.get_boolean(TILE_BY_DEFAULT);
     }
 
     workspaces_only_on_primary(): boolean {
@@ -163,10 +146,6 @@ export class ExtensionSettings {
 
     log_level(): number {
         return this.ext.get_uint(LOG_LEVEL);
-    }
-
-    show_skiptaskbar(): boolean {
-        return this.ext.get_boolean(SHOW_SKIPTASKBAR);
     }
 
     top_bar_visible(): boolean {
@@ -179,10 +158,6 @@ export class ExtensionSettings {
 
     mouse_cursor_focus_location(): number {
         return this.ext.get_uint(MOUSE_CURSOR_FOCUS_LOCATION);
-    }
-
-    max_window_width(): number {
-        return this.ext.get_uint(MAX_WINDOW_WIDTH);
     }
 
     float_default_width_percentage(): number {
@@ -215,8 +190,8 @@ export class ExtensionSettings {
         this.mutter?.set_boolean(EDGE_TILING, enable);
     }
 
-    set_fullscreen_launcher(enable: boolean) {
-        this.ext.set_boolean(FULLSCREEN_LAUNCHER, enable);
+    set_disable_active_border_on_float(set: boolean) {
+        this.ext.set_boolean(DISABLE_ACTIVE_BORDER_ON_FLOAT, set);
     }
 
     set_gap_inner(gap: number) {
@@ -241,28 +216,12 @@ export class ExtensionSettings {
         this.ext.set_uint(ROW_SIZE, size);
     }
 
-    set_show_title(set: boolean) {
-        this.ext.set_boolean(SHOW_TITLE, set);
-    }
-
-    set_smart_gaps(set: boolean) {
-        this.ext.set_boolean(SMART_GAPS, set);
-    }
-
     set_snap_to_grid(set: boolean) {
         this.ext.set_boolean(SNAP_TO_GRID, set);
     }
 
-    set_tile_by_default(set: boolean) {
-        this.ext.set_boolean(TILE_BY_DEFAULT, set);
-    }
-
     set_log_level(set: number) {
         this.ext.set_uint(LOG_LEVEL, set);
-    }
-
-    set_show_skiptaskbar(set: boolean) {
-        this.ext.set_boolean(SHOW_SKIPTASKBAR, set);
     }
 
     set_top_bar_visible(set: boolean) {
@@ -275,10 +234,6 @@ export class ExtensionSettings {
 
     set_mouse_cursor_focus_location(set: number) {
         this.ext.set_uint(MOUSE_CURSOR_FOCUS_LOCATION, set);
-    }
-
-    set_max_window_width(set: number) {
-        this.ext.set_uint(MAX_WINDOW_WIDTH, set);
     }
 
     set_float_default_width_percentage(set: number) {

@@ -312,7 +312,7 @@ export class Launcher extends search.Search {
         if (this.opened) return;
 
         // Do not activate if the focused window is fullscreen
-        if (!ext.settings.fullscreen_launcher() && ext.focus_window()?.meta.is_fullscreen()) return;
+        if (ext.focus_window()?.meta.is_fullscreen()) return;
 
         this.opened = true;
 

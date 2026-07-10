@@ -13,9 +13,9 @@
             <summary>Border radius for active window hint, in pixels</summary>
         </key>
 
-        <key type="b" name="fullscreen-launcher">
+        <key type="b" name="disable-active-border-on-float">
             <default>false</default>
-            <summary>Allow showing launcher above fullscreen windows</summary>
+            <summary>Disable active hint border on floating windows</summary>
         </key>
 
         <key type="u" name="gap-inner">
@@ -26,16 +26,6 @@
         <key type="u" name="gap-outer">
             <default>2</default>
             <summary>Gap surrounding tiled windows, in pixels</summary>
-        </key>
-
-        <key type="b" name="show-title">
-            <default>true</default>
-            <summary>Show title bars on windows with server-side decorations</summary>
-        </key>
-
-        <key type="b" name="show-skip-taskbar">
-            <default>true</default>
-            <summary>Handle minimized to tray windows</summary>
         </key>
 
         <key type="b" name="top-bar-visible">
@@ -64,29 +54,14 @@
             <summary>Size of a row in the display grid</summary>
         </key>
 
-        <key type="b" name="smart-gaps">
-            <default>false</default>
-            <summary>Hide the outer gap when a tree contains only one window</summary>
-        </key>
-
         <key type="b" name="snap-to-grid">
             <default>false</default>
             <summary>Snaps windows to the tiling grid on drop</summary>
         </key>
 
-        <key type="b" name="tile-by-default">
-            <default>false</default>
-            <summary>Tile launched windows by default</summary>
-        </key>
-
         <key type="b" name="stacking-with-mouse">
             <default>true</default>
             <summary>Allow for stacking windows as a result of dragging a window with mouse</summary>
-        </key>
-
-        <key type="u" name="max-window-width">
-            <default>0</default>
-            <summary>Maximum width of tiled windows, in pixels (0 to disable)</summary>
         </key>
 
         <!-- Focus Shifting -->

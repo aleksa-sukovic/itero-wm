@@ -128,14 +128,8 @@ export class ShellWindow {
             ext.add_tag(entity, Tags.Floating);
         }
 
-        if (this.may_decorate()) {
-            if (!this.is_client_decorated()) {
-                if (ext.settings.show_title()) {
-                    this.decoration_show(ext);
-                } else {
-                    this.decoration_hide(ext);
-                }
-            }
+        if (this.may_decorate() && !this.is_client_decorated()) {
+            this.decoration_hide(ext);
         }
 
         this.bind_window_events();
@@ -392,12 +386,6 @@ export class ShellWindow {
 
         this.hide_border();
 
-        const max_width = ext.settings.max_window_width();
-        if (max_width > 0 && rect.width > max_width) {
-            rect.x += (rect.width - max_width) / 2;
-            rect.width = max_width;
-        }
-
         const clone = Rect.Rectangle.from_meta(rect);
         const meta = this.meta;
         const actor = meta.get_compositor_private();
@@ -481,14 +469,8 @@ export class ShellWindow {
     show_border() {
         if (!this.border) return;
 
-        // Skip border for windows matching float rules when configured
-        if (this.ext.conf.disable_active_border_on_float) {
-            const wm_class = this.meta.get_wm_class();
-            const wm_title = this.meta.get_title();
-            if (wm_class && wm_title && this.ext.conf.window_shall_float(wm_class, wm_title)) {
-                return;
-            }
-        }
+        // Skip border for floating windows when configured
+        if (this.ext.settings.disable_active_border_on_float() && this.ext.is_floating(this)) return;
 
         this.restack();
         this.update_border_style();

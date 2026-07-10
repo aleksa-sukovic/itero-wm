@@ -61,44 +61,12 @@ export const DEFAULT_FLOAT_RULES: Array<FloatRule> = [
     { class: 'gjs' },
 ];
 
-export interface WindowRule {
-    class?: string;
-    title?: string;
-    disabled?: boolean;
-}
-
-/**
- * These windows will skip showing in Overview, Thumbnails or SwitcherList
- * And any rule here should be added on the DEFAULT_RULES above
- */
-export const SKIPTASKBAR_EXCEPTIONS: Array<WindowRule> = [
-    { class: 'Conky' },
-    { class: 'gjs' },
-    { class: 'Guake' },
-    { class: 'Com.github.amezin.ddterm' },
-    { class: 'plank' },
-];
-
-export interface FloatRule {
-    class?: string;
-    title?: string;
-}
-
 export class Config {
     /** List of windows that should float, regardless of their WM hints */
     float: Array<FloatRule> = [];
 
-    /**
-     * List of Windows with skip taskbar true but still hidden in Overview,
-     * Switchers, Workspace Thumbnails
-     */
-    skiptaskbarhidden: Array<WindowRule> = [];
-
     /** Logs window details on focus of window */
     log_on_focus: boolean = false;
-
-    /** Disable active hint border on windows matching float rules */
-    disable_active_border_on_float: boolean = false;
 
     /** Add a floating exception which matches by wm_class */
     add_app_exception(wmclass: string) {
@@ -140,31 +108,6 @@ export class Config {
         return false;
     }
 
-    skiptaskbar_shall_hide(meta_window: any) {
-        let wmclass = meta_window.get_wm_class();
-        let wmtitle = meta_window.get_title();
-
-        if (!meta_window.is_skip_taskbar()) return false;
-
-        for (const rule of this.skiptaskbarhidden.concat(SKIPTASKBAR_EXCEPTIONS)) {
-            if (rule.class) {
-                if (!new RegExp(rule.class, 'i').test(wmclass)) {
-                    continue;
-                }
-            }
-
-            if (rule.title) {
-                if (!new RegExp(rule.title, 'i').test(wmtitle)) {
-                    continue;
-                }
-            }
-
-            return rule.disabled ? false : true;
-        }
-
-        return false;
-    }
-
     reload() {
         const conf = Config.from_config();
 
@@ -172,7 +115,6 @@ export class Config {
             let c = conf.value;
             this.float = c.float;
             this.log_on_focus = c.log_on_focus;
-            this.disable_active_border_on_float = c.disable_active_border_on_float;
         } else {
             log(`error loading conf: ${conf.why}`);
         }
