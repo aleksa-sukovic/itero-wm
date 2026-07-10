@@ -243,18 +243,6 @@ export class Keybindings {
         this.global = {
             'activate-launcher': () => ext.window_search.open(ext),
             'tile-enter': () => ext.tiler.enter(ext),
-            'open-settings': () => {
-                if (ext.button) {
-                    ext.button.visible = true;
-                    ext.button.menu.open();
-                    const id = ext.button.menu.connect('open-state-changed', (_: any, open: boolean) => {
-                        if (!open) {
-                            ext.button.visible = false;
-                            ext.button.menu.disconnect(id);
-                        }
-                    });
-                }
-            },
             'refresh-tiling': () => ext.refresh_tiling(),
             'toggle-top-bar': () => ext.toggle_top_bar(),
             'warp-mouse-left': () => ext.warp_mouse_to_monitor(Meta.DisplayDirection.LEFT),

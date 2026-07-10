@@ -12,7 +12,6 @@ Itero WM remains open source under the same license terms as the upstream projec
 ## Changes From Upstream
 
 - Rebranded GNOME extension ID, settings schema, dconf path, config directory, settings titles, CSS classes, and extension metadata for Itero WM.
-- `Super+,` opens the Gnome settings menu.
 - `Super+f` maximizes the focused window while respecting outer gaps.
 - `disable_active_border_on_float` suppresses the active hint border for matching floating window rules.
 - `Super+Shift+m` toggles the GNOME top bar.

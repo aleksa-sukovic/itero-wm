@@ -8,7 +8,6 @@ import * as GrabOp from './grab_op.js';
 import * as Keybindings from './keybindings.js';
 import * as Lib from './lib.js';
 import * as log from './log.js';
-import * as PanelSettings from './panel_settings.js';
 import * as Rect from './rectangle.js';
 import * as Settings from './settings.js';
 import * as Tiling from './tiling.js';
@@ -28,7 +27,6 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import type { Entity } from './ecs.js';
 import type { ExtEvent } from './events.js';
 import { Rectangle } from './rectangle.js';
-import type { Indicator } from './panel_settings.js';
 import type { Launcher } from './launcher.js';
 
 import { Fork } from './fork.js';
@@ -125,8 +123,6 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     /** Animate window movements */
     animate_windows: boolean = true;
-
-    button: any = null;
 
     conf: Config.Config = new Config.Config();
 
@@ -1809,10 +1805,6 @@ export class Ext extends Ecs.System<ExtEvent> {
     on_show_window_titles() {
         const show_title = this.settings.show_title();
 
-        if (indicator?.toggle_titles) {
-            indicator.toggle_titles.setToggleState(show_title);
-        }
-
         for (const window of this.windows.values()) {
             if (window.is_client_decorated()) continue;
 
@@ -2058,9 +2050,8 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.connect(this.settings.ext, 'changed', (_s, key: string) => {
             switch (key) {
                 case 'active-hint':
-                    if (indicator) indicator.toggle_active.setToggleState(this.settings.active_hint());
-
                     this.show_border_on_focused();
+                    break;
                 case 'gap-inner':
                     this.on_gap_inner();
                     break;
@@ -2080,6 +2071,14 @@ export class Ext extends Ecs.System<ExtEvent> {
                     } else {
                         _hide_skip_taskbar_windows();
                     }
+                    break;
+                case 'tile-by-default':
+                    if (this.settings.tile_by_default()) {
+                        this.auto_tile_on();
+                    } else {
+                        this.auto_tile_off();
+                    }
+                    break;
             }
         });
 
@@ -2409,8 +2408,6 @@ export class Ext extends Ecs.System<ExtEvent> {
             this.auto_tiler = null;
             this.settings.set_tile_by_default(false);
 
-            if (indicator) indicator.toggle_tiled.setToggleState(false);
-
             if (this.settings.active_hint()) {
                 this.show_border_on_focused();
             }
@@ -2420,8 +2417,6 @@ export class Ext extends Ecs.System<ExtEvent> {
     auto_tile_on() {
         this.settings.set_edge_tiling(false);
         this.hide_all_borders();
-
-        if (indicator) indicator.toggle_tiled.setToggleState(true);
 
         const original = this.active_workspace();
 
@@ -2870,7 +2865,6 @@ export class Ext extends Ecs.System<ExtEvent> {
 }
 
 let ext: Ext | null = null;
-let indicator: Indicator | null = null;
 
 declare global {
     var iteroWmExtension: any;
@@ -2908,12 +2902,6 @@ export default class IteroWMExtension extends Extension {
 
         layoutManager.addChrome(ext.overlay);
 
-        if (!indicator) {
-            indicator = new PanelSettings.Indicator(ext);
-            panel.addToStatusArea('itero-wm', indicator.button);
-            indicator.button.visible = false;  // Hidden, unless open itero-wm settings keybinding is pressed
-        }
-
         ext.keybindings.enable(ext.keybindings.global).enable(ext.keybindings.window_focus);
 
         if (ext.settings.tile_by_default()) {
@@ -2947,11 +2935,6 @@ export default class IteroWMExtension extends Extension {
             }
 
             _hide_skip_taskbar_windows();
-        }
-
-        if (indicator) {
-            indicator.destroy();
-            indicator = null;
         }
 
         enable_window_attention_handler();

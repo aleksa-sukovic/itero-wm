@@ -300,11 +300,6 @@
         </key>
 
         <!-- Custom keybindings -->
-        <key type="as" name="open-settings">
-            <default><![CDATA[['<Super>period']]]></default>
-            <summary>Open Itero WM settings menu</summary>
-        </key>
-
         <key type="as" name="maximize-with-gaps">
             <default><![CDATA[['<Super>f']]]></default>
             <summary>Maximize focused window respecting gaps</summary>
