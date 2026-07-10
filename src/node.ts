@@ -205,13 +205,7 @@ export class Node {
     }
 
     /** Calculates the future arrangement of windows in this node */
-    measure(
-        tiler: Forest,
-        ext: Ext,
-        parent: Entity,
-        area: Rectangle,
-        record: (win: Entity, parent: Entity, area: Rectangle) => void,
-    ) {
+    measure(tiler: Forest, ext: Ext, parent: Entity, area: Rectangle, record: (win: Entity, parent: Entity, area: Rectangle) => void) {
         switch (this.inner.kind) {
             // Fork
             case 1:

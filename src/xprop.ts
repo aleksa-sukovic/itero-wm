@@ -18,11 +18,11 @@ export function get_window_role(xid: string): string | null {
 }
 
 export function get_frame_extents(xid: string): string | null {
-    let out = xprop_cmd(xid, "_GTK_FRAME_EXTENTS");
+    let out = xprop_cmd(xid, '_GTK_FRAME_EXTENTS');
 
     if (!out) return null;
 
-    return parse_string(out)
+    return parse_string(out);
 }
 
 export function get_hint(xid: string, hint: string): Array<string> | null {
@@ -32,7 +32,7 @@ export function get_hint(xid: string, hint: string): Array<string> | null {
 
     const array = parse_cardinal(out);
 
-    return array ? array.map((value) => (value.startsWith('0x') ? value : '0x' + value)) : null;
+    return array ? array.map(value => (value.startsWith('0x') ? value : '0x' + value)) : null;
 }
 
 function size_params(line: string): [number, number] | null {

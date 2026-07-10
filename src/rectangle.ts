@@ -71,21 +71,11 @@ export class Rectangle {
     }
 
     contains(other: Rectangular): boolean {
-        return (
-            this.x <= other.x &&
-            this.y <= other.y &&
-            this.x + this.width >= other.x + other.width &&
-            this.y + this.height >= other.y + other.height
-        );
+        return this.x <= other.x && this.y <= other.y && this.x + this.width >= other.x + other.width && this.y + this.height >= other.y + other.height;
     }
 
     diff(other: Rectangular): Rectangle {
-        return new Rectangle([
-            other.x - this.x,
-            other.y - this.y,
-            other.width - this.width,
-            other.height - this.height,
-        ]);
+        return new Rectangle([other.x - this.x, other.y - this.y, other.width - this.width, other.height - this.height]);
     }
 
     eq(other: Rectangular): boolean {
@@ -97,11 +87,6 @@ export class Rectangle {
     }
 
     intersects(other: Rectangular): boolean {
-        return (
-            this.x < other.x + other.width &&
-            this.x + this.width > other.x &&
-            this.y < other.y + other.height &&
-            this.y + this.height > other.y
-        );
+        return this.x < other.x + other.width && this.x + this.width > other.x && this.y < other.y + other.height && this.y + this.height > other.y;
     }
 }

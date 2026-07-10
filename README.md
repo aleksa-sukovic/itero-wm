@@ -26,6 +26,8 @@ Itero WM remains open source under the same license terms as the upstream projec
 
 ## Development
 
+To build and install the extension, run:
+
 ```bash
 make
 make install
@@ -39,4 +41,10 @@ git remote add upstream https://github.com/pop-os/shell.git
 git fetch upstream
 git merge upstream/master_noble
 git push origin master
+```
+
+To format the codebase, run:
+
+```bash
+npx --yes prettier@latest --write .
 ```

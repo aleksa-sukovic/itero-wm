@@ -90,12 +90,7 @@ function restore_tiled_position(ext: Ext, win: ShellWindow): boolean {
 
 /** Case 1: The fork the window was in still exists. Wrap its children into a
  *  sub-fork and re-insert the window on its original side. */
-function restore_to_surviving_fork(
-    ext: Ext,
-    win: ShellWindow,
-    state: NonNullable<ShellWindow['saved_maximize']>,
-    saved_fork: any,
-): boolean {
+function restore_to_surviving_fork(ext: Ext, win: ShellWindow, state: NonNullable<ShellWindow['saved_maximize']>, saved_fork: any): boolean {
     const forest = ext.auto_tiler!.forest;
     const win_node = Node.Node.window(win.entity);
 
@@ -112,10 +107,7 @@ function restore_to_surviving_fork(
         const left_child = saved_fork.left;
         const right_child = saved_fork.right;
 
-        const [sub_entity] = forest.create_fork(
-            left_child, right_child,
-            saved_fork.area.clone(), saved_fork.workspace, saved_fork.monitor,
-        );
+        const [sub_entity] = forest.create_fork(left_child, right_child, saved_fork.area.clone(), saved_fork.workspace, saved_fork.monitor);
 
         // Set sub-fork orientation to match original sibling fork
         if (state.sibling_fork_orientation !== null) {
@@ -147,11 +139,7 @@ function restore_to_surviving_fork(
 
 /** Case 2: The window's fork was destroyed; the sibling (a sub-fork) was moved up
  *  to the parent. Create a new fork between parent and sibling fork. */
-function restore_beside_sibling_fork(
-    ext: Ext,
-    win: ShellWindow,
-    state: NonNullable<ShellWindow['saved_maximize']>,
-): boolean {
+function restore_beside_sibling_fork(ext: Ext, win: ShellWindow, state: NonNullable<ShellWindow['saved_maximize']>): boolean {
     const forest = ext.auto_tiler!.forest;
     const sibling_fork = forest.forks.get(state.sibling_entity);
     if (!sibling_fork) return false;
@@ -168,7 +156,9 @@ function restore_beside_sibling_fork(
     const [new_fork_entity, new_fork] = forest.create_fork(
         state.was_left ? win_node : sibling_node,
         state.was_left ? sibling_node : win_node,
-        parent_fork.area.clone(), parent_fork.workspace, parent_fork.monitor,
+        parent_fork.area.clone(),
+        parent_fork.workspace,
+        parent_fork.monitor,
     );
     new_fork.set_orientation(state.fork_orientation);
 
@@ -194,11 +184,7 @@ function restore_beside_sibling_fork(
 
 /** Case 3: The window's fork was destroyed; the sibling (a window) was moved up.
  *  Use attach_to_window to place beside the sibling. */
-function restore_beside_sibling_window(
-    ext: Ext,
-    win: ShellWindow,
-    state: NonNullable<ShellWindow['saved_maximize']>,
-): boolean {
+function restore_beside_sibling_window(ext: Ext, win: ShellWindow, state: NonNullable<ShellWindow['saved_maximize']>): boolean {
     const sibling_win = ext.windows.get(state.sibling_entity);
     if (!sibling_win) return false;
 
@@ -208,10 +194,7 @@ function restore_beside_sibling_window(
     const sibling_fork = ext.auto_tiler!.forest.forks.get(sibling_fork_entity);
     if (!sibling_fork || sibling_fork.monitor !== win.meta.get_monitor()) return false;
 
-    ext.auto_tiler!.attach_to_window(
-        ext, sibling_win, win,
-        { swap: state.was_left, orientation: state.fork_orientation },
-    );
+    ext.auto_tiler!.attach_to_window(ext, sibling_win, win, { swap: state.was_left, orientation: state.fork_orientation });
     return true;
 }
 
@@ -351,13 +334,7 @@ export class Keybindings {
 
     enable(keybindings: any) {
         for (const name in keybindings) {
-            wm.addKeybinding(
-                name,
-                this.ext.settings.ext,
-                Meta.KeyBindingFlags.NONE,
-                Shell.ActionMode.NORMAL,
-                keybindings[name],
-            );
+            wm.addKeybinding(name, this.ext.settings.ext, Meta.KeyBindingFlags.NONE, Shell.ActionMode.NORMAL, keybindings[name]);
         }
 
         return this;

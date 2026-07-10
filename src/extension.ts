@@ -51,23 +51,14 @@ try {
 const { GlobalEvent, WindowEvent } = Events;
 const { cursor_rect, is_keyboard_op, is_resize_op, is_move_op } = Lib;
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-const {
-    layoutManager,
-    loadTheme,
-    overview,
-    panel,
-    setThemeStylesheet,
-    screenShield,
-    sessionMode,
-    windowAttentionHandler,
-} = Main;
+const { layoutManager, loadTheme, overview, panel, setThemeStylesheet, screenShield, sessionMode, windowAttentionHandler } = Main;
 import { ScreenShield } from 'resource:///org/gnome/shell/ui/screenShield.js';
 import { PACKAGE_VERSION } from 'resource:///org/gnome/shell/misc/config.js';
 import * as Tags from './tags.js';
 import { get_current_path } from './paths.js';
 
 const STYLESHEET_PATHS = ['light', 'dark', 'highcontrast'].map(stylesheet_path);
-const STYLESHEETS = STYLESHEET_PATHS.map((path) => Gio.File.new_for_path(path));
+const STYLESHEETS = STYLESHEET_PATHS.map(path => Gio.File.new_for_path(path));
 const GNOME_VERSION = PACKAGE_VERSION;
 
 enum Style {
@@ -483,7 +474,7 @@ export class Ext extends Ecs.System<ExtEvent> {
             if (old) {
                 try {
                     GLib.source_remove(old);
-                } catch (_) { }
+                } catch (_) {}
             }
 
             const new_s = GLib.timeout_add(GLib.PRIORITY_LOW, 500, () => {
@@ -770,8 +761,8 @@ export class Ext extends Ecs.System<ExtEvent> {
         const width_pct = this.settings.float_default_width_percentage();
         const height_pct = this.settings.float_default_height_percentage();
 
-        const width = Math.round(work_area.width * width_pct / 100);
-        const height = Math.round(work_area.height * height_pct / 100);
+        const width = Math.round((work_area.width * width_pct) / 100);
+        const height = Math.round((work_area.height * height_pct) / 100);
         const centered = this.center_rect_on_monitor(monitor, new Rectangle([0, 0, width, height]));
 
         win.move(this, centered);
@@ -804,12 +795,7 @@ export class Ext extends Ecs.System<ExtEvent> {
             const active = this.workspace_active.get(workspace_id);
             if (active) {
                 const window = this.windows.get(active);
-                if (
-                    window &&
-                    window.meta.get_workspace().index() == workspace_id &&
-                    window.same_monitor() &&
-                    !window.meta.minimized
-                ) {
+                if (window && window.meta.get_workspace().index() == workspace_id && window.same_monitor() && !window.meta.minimized) {
                     activate_window(window);
                     return;
                 }
@@ -850,7 +836,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         window.destroying = true;
 
         // Disconnect all signals on this window
-        this.window_signals.take_with(win, (signals) => {
+        this.window_signals.take_with(win, signals => {
             for (const signal of signals) {
                 window.meta.disconnect(signal);
             }
@@ -863,7 +849,7 @@ export class Ext extends Ecs.System<ExtEvent> {
                 if (fork?.right?.is_window(win)) {
                     const entity = fork.right.inner.kind === 3 ? fork.right.inner.entities[0] : fork.right.inner.entity;
 
-                    this.windows.with(entity, (sibling) => sibling.activate());
+                    this.windows.with(entity, sibling => sibling.activate());
                 }
             }
         }
@@ -969,7 +955,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     on_tile_attach(entity: Entity, window: Entity) {
         if (this.auto_tiler) {
             if (!this.auto_tiler.attached.contains(window)) {
-                this.windows.with(window, (w) => {
+                this.windows.with(window, w => {
                     if (w.prev_rect === null) {
                         w.prev_rect = w.meta.get_frame_rect();
                     }
@@ -981,7 +967,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     on_tile_detach(win: Entity) {
-        this.windows.with(win, (window) => {
+        this.windows.with(win, window => {
             if (window.prev_rect && !window.ignore_detach) {
                 this.register(Events.window_move(this, window, window.prev_rect));
                 window.prev_rect = null;
@@ -1053,15 +1039,9 @@ export class Ext extends Ecs.System<ExtEvent> {
             work = win.meta.get_workspace().index();
 
             for (const [, compare] of this.windows.iter()) {
-                const is_same_space =
-                    compare.meta.get_monitor() === mon && compare.meta.get_workspace().index() === work;
+                const is_same_space = compare.meta.get_monitor() === mon && compare.meta.get_workspace().index() === work;
 
-                if (
-                    is_same_space &&
-                    !this.contains_tag(compare.entity, Tags.Floating) &&
-                    compare.is_maximized() &&
-                    win.entity[0] !== compare.entity[0]
-                ) {
+                if (is_same_space && !this.contains_tag(compare.entity, Tags.Floating) && compare.is_maximized() && win.entity[0] !== compare.entity[0]) {
                     compare.meta.unmaximize(Meta.MaximizeFlags.BOTH);
                 }
             }
@@ -1293,7 +1273,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
                 this.register(Events.window_move(this, win, rect));
             } else {
-                win.move(this, rect, () => { });
+                win.move(this, rect, () => {});
                 // if the resulting dimensions of rect == next
                 if (rect.width == next_area.width && rect.height == next_area.height) {
                     win.meta.maximize(Meta.MaximizeFlags.BOTH);
@@ -1360,9 +1340,9 @@ export class Ext extends Ecs.System<ExtEvent> {
         const { UP, DOWN, LEFT } = Meta.DisplayDirection;
 
         // Find which monitor the pointer is currently on
-        const cursor = Mtk ?
-            new Mtk.Rectangle({ x: pointer_x, y: pointer_y, width: 1, height: 1 }) :
-            new Meta.Rectangle({ x: pointer_x, y: pointer_y, width: 1, height: 1 });
+        const cursor = Mtk
+            ? new Mtk.Rectangle({ x: pointer_x, y: pointer_y, width: 1, height: 1 })
+            : new Meta.Rectangle({ x: pointer_x, y: pointer_y, width: 1, height: 1 });
         const current_monitor = display.get_monitor_index_for_rect(cursor);
         const current_area = global.display.get_monitor_geometry(current_monitor);
 
@@ -1494,7 +1474,7 @@ export class Ext extends Ecs.System<ExtEvent> {
                     // Move everything one workspace down
                     this.on_workspace_modify(
                         () => true,
-                        (current) => current + 1,
+                        current => current + 1,
                         true,
                     );
 
@@ -1577,9 +1557,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
                     if (attach_to === null) {
                         if (fork.left.inner.kind === 2 && fork.right?.inner.kind === 2) {
-                            let attaching = fork.left.is_window(entity)
-                                ? fork.right.inner.entity
-                                : fork.left.inner.entity;
+                            let attaching = fork.left.is_window(entity) ? fork.right.inner.entity : fork.left.inner.entity;
 
                             attach_to = this.windows.get(attaching);
                         }
@@ -1597,8 +1575,7 @@ export class Ext extends Ecs.System<ExtEvent> {
                         const is_sibling = this.auto_tiler.windows_are_siblings(entity, attach_to.entity);
 
                         [area, monitor_attachment] =
-                            (win.stack === null && attach_to.stack === null && is_sibling) ||
-                                (win.stack === null && is_sibling)
+                            (win.stack === null && attach_to.stack === null && is_sibling) || (win.stack === null && is_sibling)
                                 ? [fork.area, false]
                                 : [attach_to.meta.get_frame_rect(), false];
                     } else {
@@ -1629,8 +1606,8 @@ export class Ext extends Ecs.System<ExtEvent> {
                                 ? [area.x, area.y, half_width, area.height]
                                 : [area.x + half_width, area.y, half_width, area.height]
                             : swap
-                                ? [area.x, area.y, area.width, half_height]
-                                : [area.x, area.y + half_height, area.width, half_height];
+                              ? [area.x, area.y, area.width, half_height]
+                              : [area.x, area.y + half_height, area.width, half_height];
 
                     this.overlay.x = new_area[0];
                     this.overlay.y = new_area[1];
@@ -1656,11 +1633,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     reload_theme() {
-        this.current_style = this.settings.is_dark()
-            ? Style.Dark
-            : this.settings.is_high_contrast()
-                ? Style.HighContrast
-                : Style.Light;
+        this.current_style = this.settings.is_dark() ? Style.Dark : this.settings.is_high_contrast() ? Style.HighContrast : Style.Light;
     }
 
     /** Handle window maximization notifications */
@@ -1757,10 +1730,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     /** Handles the event of a window moving from one monitor to another. */
-    on_monitor_changed(
-        win: Window.ShellWindow,
-        func: (exp_mon: null | number, act_mon: number, act_work: number) => void,
-    ) {
+    on_monitor_changed(win: Window.ShellWindow, func: (exp_mon: null | number, act_mon: number, act_work: number) => void) {
         const actual_monitor = win.meta.get_monitor();
         const actual_workspace = win.workspace_id();
         const monitor = this.monitors.get(win.entity);
@@ -1848,16 +1818,12 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     on_workspace_index_changed(prev: number, next: number) {
         this.on_workspace_modify(
-            (current) => current == prev,
-            (_) => next,
+            current => current == prev,
+            _ => next,
         );
     }
 
-    on_workspace_modify(
-        condition: (current: number) => boolean,
-        modify: (current: number) => number,
-        change_workspace: boolean = false,
-    ) {
+    on_workspace_modify(condition: (current: number) => boolean, modify: (current: number) => number, change_workspace: boolean = false) {
         function window_move(ext: Ext, entity: Entity, ws: WorkspaceID) {
             if (change_workspace) {
                 const window = ext.windows.get(entity);
@@ -1925,8 +1891,8 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     on_workspace_removed(number: number) {
         this.on_workspace_modify(
-            (current) => current > number,
-            (prev) => prev - 1,
+            current => current > number,
+            prev => prev - 1,
         );
     }
 
@@ -1968,7 +1934,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     signals_attach() {
         // this.conf_watch = this.attach_config();
 
-        this.tiler.queue.start(100, (movement) => {
+        this.tiler.queue.start(100, movement => {
             movement();
             return true;
         });
@@ -2347,9 +2313,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         const original = this.active_workspace();
 
         let tiler = new auto_tiler.AutoTiler(
-            new Forest.Forest()
-                .connect_on_attach(this.on_tile_attach.bind(this))
-                .connect_on_detach(this.on_tile_detach.bind(this)),
+            new Forest.Forest().connect_on_attach(this.on_tile_attach.bind(this)).connect_on_detach(this.on_tile_detach.bind(this)),
             this.register_storage(),
         );
 
@@ -2402,7 +2366,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.moved_by_mouse = false;
     }
 
-    update_display_configuration_before() { }
+    update_display_configuration_before() {}
 
     update_display_configuration(workareas_only: boolean) {
         if (!this.auto_tiler || sessionMode.isLocked) return;
@@ -2646,7 +2610,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     update_snapped() {
-        for (const entity of this.snapped.find((val) => val)) {
+        for (const entity of this.snapped.find(val => val)) {
             const window = this.windows.get(entity);
             if (window) this.tiler.snap(this, window);
         }
@@ -2665,7 +2629,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
 
         // Locate the window entity with the matching ID
-        let entity = this.ids.find((comp) => comp == id).next().value;
+        let entity = this.ids.find(comp => comp == id).next().value;
 
         // If not found, create a new entity with a ShellWindow component.
         if (!entity) {
@@ -2677,10 +2641,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
             // N.B. Wl-clipboard creates a temporary transparent toplevel on Mutter.
             // Ignore it so clipboard operations do not perturb the tiling tree.
-            if (
-                (wm_class && /wl-clipboard|io\.github\.bugaevc\.wl-clipboard/i.test(wm_class)) ||
-                (wm_title && /^wl-clipboard$/i.test(wm_title))
-            ) {
+            if ((wm_class && /wl-clipboard|io\.github\.bugaevc\.wl-clipboard/i.test(wm_class)) || (wm_title && /^wl-clipboard$/i.test(wm_title))) {
                 return null;
             }
 
@@ -2711,7 +2672,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
             const grab_focus = () => {
                 this.schedule_idle(() => {
-                    this.windows.with(entity, (window) => {
+                    this.windows.with(entity, window => {
                         window.meta.raise();
                         window.meta.unminimize();
                         window.activate(false);
@@ -2736,8 +2697,8 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     /// Returns the tilable window(s) that the mouse pointer is currently hovering above.
     *windows_at_pointer(cursor: Rectangle, monitor: number, workspace: number): IterableIterator<Window.ShellWindow> {
-        for (const entity of this.monitors.find((m) => m[0] == monitor && m[1] == workspace)) {
-            let window = this.windows.with(entity, (window) => {
+        for (const entity of this.monitors.find(m => m[0] == monitor && m[1] == workspace)) {
+            let window = this.windows.with(entity, window => {
                 return window.is_tilable(this) && window.rect().contains(cursor) ? window : null;
             });
 
@@ -2748,9 +2709,9 @@ export class Ext extends Ecs.System<ExtEvent> {
     cursor_status(): [Rectangle, number] {
         const cursor = cursor_rect();
         // Use Mtk.Rectangle if available (newer GNOME), otherwise fallback to Meta.Rectangle
-        const rect = Mtk ?
-            new Mtk.Rectangle({ x: cursor.x, y: cursor.y, width: 1, height: 1 }) :
-            new Meta.Rectangle({ x: cursor.x, y: cursor.y, width: 1, height: 1 });
+        const rect = Mtk
+            ? new Mtk.Rectangle({ x: cursor.x, y: cursor.y, width: 1, height: 1 })
+            : new Meta.Rectangle({ x: cursor.x, y: cursor.y, width: 1, height: 1 });
         const monitor = display.get_monitor_index_for_rect(rect);
         return [cursor, monitor];
     }
@@ -2761,9 +2722,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     workspace_id(window: Window.ShellWindow | null = null): [number, number] {
-        let id: [number, number] = window
-            ? [window.meta.get_monitor(), window.workspace_id()]
-            : [this.active_monitor(), this.active_workspace()];
+        let id: [number, number] = window ? [window.meta.get_monitor(), window.workspace_id()] : [this.active_monitor(), this.active_workspace()];
 
         id[0] = Math.max(0, id[0]);
         id[1] = Math.max(0, id[1]);
@@ -2922,4 +2881,3 @@ function* iter_workspaces(manager: any): IterableIterator<[number, any]> {
         ws = manager.get_workspace_by_index(idx);
     }
 }
-

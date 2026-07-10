@@ -46,14 +46,7 @@ export class Service {
 
         function onNameLost() {}
 
-        this.id = Gio.bus_own_name(
-            Gio.BusType.SESSION,
-            'io.itero.IteroWM',
-            Gio.BusNameOwnerFlags.NONE,
-            onBusAcquired,
-            onNameAcquired,
-            onNameLost,
-        );
+        this.id = Gio.bus_own_name(Gio.BusType.SESSION, 'io.itero.IteroWM', Gio.BusNameOwnerFlags.NONE, onBusAcquired, onNameAcquired, onNameLost);
     }
 
     destroy() {

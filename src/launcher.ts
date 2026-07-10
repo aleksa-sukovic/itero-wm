@@ -143,7 +143,7 @@ export class Launcher extends search.Search {
                             null,
                         );
 
-                        const menu = context.addMenu(button.widget, (menu) => {
+                        const menu = context.addMenu(button.widget, menu => {
                             if (this.active_menu) {
                                 this.active_menu.actor.hide();
                             }
@@ -344,7 +344,7 @@ export class Launcher extends search.Search {
         if (this.service === null) {
             log.debug('starting pop-launcher service');
             const ipc = utils.async_process_ipc(['pop-launcher']);
-            this.service = ipc ? new service.LauncherService(ipc, (resp) => this.on_response(resp)) : null;
+            this.service = ipc ? new service.LauncherService(ipc, resp => this.on_response(resp)) : null;
         }
     }
 

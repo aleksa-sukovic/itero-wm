@@ -91,9 +91,9 @@ Tasks for a tester to verify when approving a patch. Use complex window layouts 
 - [ ] : executes a command in sh
 - [ ] = calculates an equation
 - [ ] Search results are as expected:
-  - `cal` returns Calendar and Calculator before Color
-  - `pops` returns Popsicle first
-  - `shop` returns the Pop!\_Shop first
+    - `cal` returns Calendar and Calculator before Color
+    - `pops` returns Popsicle first
+    - `shop` returns the Pop!\_Shop first
 
 ### Window Titles
 

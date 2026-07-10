@@ -128,13 +128,7 @@ export class Forest extends Ecs.World {
 
         if (is_left) {
             if (fork.right) {
-                const new_fork = this.create_fork(
-                    fork.left,
-                    fork.right,
-                    fork.area_of_right(ext),
-                    fork.workspace,
-                    fork.monitor,
-                )[0];
+                const new_fork = this.create_fork(fork.left, fork.right, fork.area_of_right(ext), fork.workspace, fork.monitor)[0];
                 fork.right = Node.Node.fork(new_fork);
                 this.parents.insert(new_fork, fork.entity);
                 this.on_attach(new_fork, window);
@@ -146,13 +140,7 @@ export class Forest extends Ecs.World {
             fork.left = node;
         } else {
             if (fork.right) {
-                const new_fork = this.create_fork(
-                    fork.left,
-                    fork.right,
-                    fork.area_of_left(ext),
-                    fork.workspace,
-                    fork.monitor,
-                )[0];
+                const new_fork = this.create_fork(fork.left, fork.right, fork.area_of_left(ext), fork.workspace, fork.monitor)[0];
                 fork.left = Node.Node.fork(new_fork);
                 this.parents.insert(new_fork, fork.entity);
                 this.on_attach(new_fork, window);
@@ -166,13 +154,7 @@ export class Forest extends Ecs.World {
         this.on_attach(fork.entity, window);
     }
 
-    attach_stack(
-        ext: Ext,
-        stack: Node.NodeStack,
-        fork: Fork.Fork,
-        new_entity: Entity,
-        stack_from_left: boolean,
-    ): [Entity, Fork.Fork] | null {
+    attach_stack(ext: Ext, stack: Node.NodeStack, fork: Fork.Fork, new_entity: Entity, stack_from_left: boolean): [Entity, Fork.Fork] | null {
         const container = this.stacks.get(stack.idx);
         if (container) {
             const window = ext.windows.get(new_entity);
@@ -205,13 +187,7 @@ export class Forest extends Ecs.World {
     }
 
     /** Attaches a `new` window to the fork which `onto` is attached to. */
-    attach_window(
-        ext: Ext,
-        onto_entity: Entity,
-        new_entity: Entity,
-        place_by: MoveBy,
-        stack_from_left: boolean,
-    ): [Entity, Fork.Fork] | null {
+    attach_window(ext: Ext, onto_entity: Entity, new_entity: Entity, place_by: MoveBy, stack_from_left: boolean): [Entity, Fork.Fork] | null {
         /** Place a window in a fork based on where the window was originally located */
         function place_by_keyboard(fork: Fork.Fork, src: Rectangular, left: Rectangle, right: Rectangle) {
             const from: [number, number] = [src.x + src.width / 2, src.y + src.height / 2];
@@ -240,16 +216,15 @@ export class Forest extends Ecs.World {
         function area_of_halves(fork: Fork.Fork): [Rectangle, Rectangle] {
             const { x, y, width, height } = fork.area;
 
-            const [left, right]: [[number, number, number, number], [number, number, number, number]] =
-                fork.is_horizontal()
-                    ? [
-                          [x, y, width / 2, height],
-                          [x + width / 2, y, width / 2, height],
-                      ]
-                    : [
-                          [x, y, width, height / 2],
-                          [x, y + height / 2, width, height / 2],
-                      ];
+            const [left, right]: [[number, number, number, number], [number, number, number, number]] = fork.is_horizontal()
+                ? [
+                      [x, y, width / 2, height],
+                      [x + width / 2, y, width / 2, height],
+                  ]
+                : [
+                      [x, y, width, height / 2],
+                      [x, y + height / 2, width, height / 2],
+                  ];
 
             return [new Rect.Rectangle(left), new Rect.Rectangle(right)];
         }
@@ -270,19 +245,9 @@ export class Forest extends Ecs.World {
         };
 
         /** Create a new fork and place this new fork on the right branch */
-        const fork_and_place_on_right = (
-            entity: Entity,
-            fork: Fork.Fork,
-            right_branch: Node.Node,
-        ): [Entity, Fork.Fork] | null => {
+        const fork_and_place_on_right = (entity: Entity, fork: Fork.Fork, right_branch: Node.Node): [Entity, Fork.Fork] | null => {
             const area = fork.area_of_right(ext);
-            const [fork_entity, new_fork] = this.create_fork(
-                right_branch,
-                right_node,
-                area,
-                fork.workspace,
-                fork.monitor,
-            );
+            const [fork_entity, new_fork] = this.create_fork(right_branch, right_node, area, fork.workspace, fork.monitor);
 
             fork.right = Node.Node.fork(fork_entity);
             this.parents.insert(fork_entity, entity);
@@ -345,13 +310,7 @@ export class Forest extends Ecs.World {
     }
 
     /** Create a new fork, where the left portion is a window `Entity` */
-    create_fork(
-        left: Node.Node,
-        right: Node.Node | null,
-        area: Rectangle,
-        workspace: WorkspaceID,
-        monitor: MonitorID,
-    ): [Entity, Fork.Fork] {
+    create_fork(left: Node.Node, right: Node.Node | null, area: Rectangle, workspace: WorkspaceID, monitor: MonitorID): [Entity, Fork.Fork] {
         const entity = this.create_entity();
         let orient = area.width > area.height ? Lib.Orientation.HORIZONTAL : Lib.Orientation.VERTICAL;
         let fork = new Fork.Fork(entity, left, right, area, workspace, monitor, orient);
@@ -363,7 +322,7 @@ export class Forest extends Ecs.World {
     create_toplevel(window: Entity, area: Rectangle, id: [MonitorID, WorkspaceID]): [Entity, Fork.Fork] {
         const [entity, fork] = this.create_fork(Node.Node.window(window), null, area, id[1], id[0]);
 
-        this.string_reps.with(entity, (sid) => {
+        this.string_reps.with(entity, sid => {
             fork.set_toplevel(this, entity, sid, id);
         });
 
@@ -459,7 +418,7 @@ export class Forest extends Ecs.World {
         }
 
         if (stack_detach) {
-            ext.windows.with(window, (w) => (w.stack = null));
+            ext.windows.with(window, w => (w.stack = null));
         }
 
         this.on_detach(window);
@@ -503,14 +462,7 @@ export class Forest extends Ecs.World {
     }
 
     /** Grows a sibling a fork. */
-    private grow_sibling(
-        ext: Ext,
-        fork_e: Entity,
-        fork_c: Fork.Fork,
-        is_left: boolean,
-        movement: movement.Movement,
-        crect: Rectangle,
-    ) {
+    private grow_sibling(ext: Ext, fork_e: Entity, fork_c: Fork.Fork, is_left: boolean, movement: movement.Movement, crect: Rectangle) {
         const resize_fork = () => this.resize_fork_(ext, fork_e, crect, movement, false);
 
         if (fork_c.is_horizontal()) {
@@ -606,15 +558,7 @@ export class Forest extends Ecs.World {
     resize(ext: Ext, fork_e: Entity, fork_c: Fork.Fork, win_e: Entity, movement: movement.Movement, crect: Rectangle) {
         const is_left = fork_c.left.is_window(win_e) || fork_c.left.is_in_stack(win_e);
 
-        ((movement & Movement.SHRINK) != 0 ? this.shrink_sibling : this.grow_sibling).call(
-            this,
-            ext,
-            fork_e,
-            fork_c,
-            is_left,
-            movement,
-            crect,
-        );
+        ((movement & Movement.SHRINK) != 0 ? this.shrink_sibling : this.grow_sibling).call(this, ext, fork_e, fork_c, is_left, movement, crect);
     }
 
     /** Higher order function which forwards record events to our record method. */
@@ -777,7 +721,11 @@ export class Forest extends Ecs.World {
             if (child.area.contains(crect)) {
                 if ((mov & UP) !== 0) {
                     if (shrunk) {
-                        if (child.is_horizontal()) { child_e = parent; parent = this.parents.get(child_e); continue; }
+                        if (child.is_horizontal()) {
+                            child_e = parent;
+                            parent = this.parents.get(child_e);
+                            continue;
+                        }
                         if (child.area.y + child.area.height > src_node.area.y + src_node.area.height) {
                             found = true;
                             break;
@@ -788,7 +736,11 @@ export class Forest extends Ecs.World {
                     }
                 } else if ((mov & DOWN) !== 0) {
                     if (shrunk) {
-                        if (child.is_horizontal()) { child_e = parent; parent = this.parents.get(child_e); continue; }
+                        if (child.is_horizontal()) {
+                            child_e = parent;
+                            parent = this.parents.get(child_e);
+                            continue;
+                        }
                         if (child.area.y < src_node.area.y) {
                             found = true;
                             break;
@@ -799,7 +751,11 @@ export class Forest extends Ecs.World {
                     }
                 } else if ((mov & LEFT) !== 0) {
                     if (shrunk) {
-                        if (!child.is_horizontal()) { child_e = parent; parent = this.parents.get(child_e); continue; }
+                        if (!child.is_horizontal()) {
+                            child_e = parent;
+                            parent = this.parents.get(child_e);
+                            continue;
+                        }
                         if (child.area.x + child.area.width > src_node.area.x + src_node.area.width) {
                             found = true;
                             break;
@@ -810,7 +766,11 @@ export class Forest extends Ecs.World {
                     }
                 } else if ((mov & RIGHT) !== 0) {
                     if (shrunk) {
-                        if (!child.is_horizontal()) { child_e = parent; parent = this.parents.get(child_e); continue; }
+                        if (!child.is_horizontal()) {
+                            child_e = parent;
+                            parent = this.parents.get(child_e);
+                            continue;
+                        }
                         if (child.area.x < src_node.area.x) {
                             found = true;
                             break;
@@ -845,14 +805,7 @@ export class Forest extends Ecs.World {
     }
 
     /** Shrinks the sibling of a fork, possibly shrinking the fork itself */
-    private shrink_sibling(
-        ext: Ext,
-        fork_e: Entity,
-        fork_c: Fork.Fork,
-        is_left: boolean,
-        movement: movement.Movement,
-        crect: Rectangle,
-    ) {
+    private shrink_sibling(ext: Ext, fork_e: Entity, fork_c: Fork.Fork, is_left: boolean, movement: movement.Movement, crect: Rectangle) {
         const resize_fork = () => this.resize_fork_(ext, fork_e, crect, movement, true);
 
         if (fork_c.area) {

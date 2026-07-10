@@ -226,10 +226,7 @@ export class Search {
             const { x, y } = this.dialog.dialogLayout;
             const area = new rect.Rectangle([x, y, width, height]);
 
-            const close =
-                this.dialog.visible &&
-                event.type() == Clutter.EventType.BUTTON_PRESS &&
-                !area.contains(Lib.cursor_rect());
+            const close = this.dialog.visible && event.type() == Clutter.EventType.BUTTON_PRESS && !area.contains(Lib.cursor_rect());
 
             if (close) {
                 this.reset();

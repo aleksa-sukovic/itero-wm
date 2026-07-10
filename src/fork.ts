@@ -41,15 +41,7 @@ export class Fork {
     /** Tracks toggle count so that we may swap branches when toggled twice */
     private n_toggled: number = 0;
 
-    constructor(
-        entity: Entity,
-        left: Node,
-        right: Node | null,
-        area: Rectangle,
-        workspace: WorkspaceID,
-        monitor: MonitorID,
-        orient: Lib.Orientation,
-    ) {
+    constructor(entity: Entity, left: Node, right: Node | null, area: Rectangle, workspace: WorkspaceID, monitor: MonitorID, orient: Lib.Orientation) {
         this.on_primary_display = global.display.get_primary_monitor() === monitor;
         this.area = area;
         this.left = left;
@@ -332,9 +324,7 @@ export class Fork {
     }
 
     rebalance_orientation() {
-        this.set_orientation(
-            this.area.height > this.area.width ? Lib.Orientation.VERTICAL : Lib.Orientation.HORIZONTAL,
-        );
+        this.set_orientation(this.area.height > this.area.width ? Lib.Orientation.VERTICAL : Lib.Orientation.HORIZONTAL);
     }
 
     set_orientation(o: Lib.Orientation) {
@@ -355,8 +345,7 @@ export class Fork {
 
     /** Toggles the orientation of this fork */
     toggle_orientation() {
-        this.orientation =
-            Lib.Orientation.HORIZONTAL === this.orientation ? Lib.Orientation.VERTICAL : Lib.Orientation.HORIZONTAL;
+        this.orientation = Lib.Orientation.HORIZONTAL === this.orientation ? Lib.Orientation.VERTICAL : Lib.Orientation.HORIZONTAL;
 
         this.orientation_changed = true;
         if (this.n_toggled === 1) {

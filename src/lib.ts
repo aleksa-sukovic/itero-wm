@@ -44,9 +44,7 @@ export function bench<T>(name: string, callback: () => T): T {
 }
 
 export function current_monitor(): Rectangle {
-    return rectangle.Rectangle.from_meta(
-        global.display.get_monitor_geometry(global.display.get_current_monitor()) as Rectangular,
-    );
+    return rectangle.Rectangle.from_meta(global.display.get_monitor_geometry(global.display.get_current_monitor()) as Rectangular);
 }
 
 // Fetch rectangle that represents the cursor
@@ -73,7 +71,7 @@ export function* get_children(actor: Clutter.Actor): IterableIterator<Clutter.Ac
 }
 
 export function join<T>(iterator: IterableIterator<T>, next_func: (arg: T) => void, between_func: () => void) {
-    ok(iterator.next().value, (first) => {
+    ok(iterator.next().value, first => {
         next_func(first);
 
         for (const item of iterator) {
@@ -89,13 +87,8 @@ export function is_keyboard_op(op: number): boolean {
 }
 
 export function is_resize_op(op: number): boolean {
-    const window_dir_mask =
-        (Meta.GrabOp.RESIZING_N | Meta.GrabOp.RESIZING_E | Meta.GrabOp.RESIZING_S | Meta.GrabOp.RESIZING_W) &
-        ~Meta.GrabOp.WINDOW_BASE;
-    return (
-        (op & window_dir_mask) != 0 ||
-        (op & Meta.GrabOp.KEYBOARD_RESIZING_UNKNOWN) == Meta.GrabOp.KEYBOARD_RESIZING_UNKNOWN
-    );
+    const window_dir_mask = (Meta.GrabOp.RESIZING_N | Meta.GrabOp.RESIZING_E | Meta.GrabOp.RESIZING_S | Meta.GrabOp.RESIZING_W) & ~Meta.GrabOp.WINDOW_BASE;
+    return (op & window_dir_mask) != 0 || (op & Meta.GrabOp.KEYBOARD_RESIZING_UNKNOWN) == Meta.GrabOp.KEYBOARD_RESIZING_UNKNOWN;
 }
 
 export function is_move_op(op: number): boolean {

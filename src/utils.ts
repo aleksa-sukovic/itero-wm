@@ -76,7 +76,7 @@ export function is_dark(color: string): boolean {
     }
 
     let uicolors = [r / 255, g / 255, b / 255];
-    let c = uicolors.map((col) => {
+    let c = uicolors.map(col => {
         if (col <= 0.03928) {
             return col / 12.92;
         }

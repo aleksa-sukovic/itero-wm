@@ -141,13 +141,7 @@ export class AutoTiler {
     }
 
     /** Tiles a window into another */
-    attach_to_window(
-        ext: Ext,
-        attachee: ShellWindow,
-        attacher: ShellWindow,
-        move_by: MoveBy,
-        stack_from_left: boolean = true,
-    ): boolean {
+    attach_to_window(ext: Ext, attachee: ShellWindow, attacher: ShellWindow, move_by: MoveBy, stack_from_left: boolean = true): boolean {
         let attached = this.forest.attach_window(ext, attachee.entity, attacher.entity, move_by, stack_from_left);
 
         if (attached) {
@@ -245,7 +239,7 @@ export class AutoTiler {
                 this.tile(ext, fork, fork.area);
             }
 
-            ext.windows.with(win, (info) => (info.ignore_detach = false));
+            ext.windows.with(win, info => (info.ignore_detach = false));
         });
     }
 
@@ -400,9 +394,7 @@ export class AutoTiler {
         const is_sibling = this.windows_are_siblings(win.entity, attach_to.entity);
 
         const attach_area: Rectangular =
-            (win.stack === null && attach_to.stack === null && is_sibling) || (win.stack === null && is_sibling)
-                ? fork.area
-                : attach_to.meta.get_frame_rect();
+            (win.stack === null && attach_to.stack === null && is_sibling) || (win.stack === null && is_sibling) ? fork.area : attach_to.meta.get_frame_rect();
 
         let placement: null | MoveBy = cursor_placement(ext, attach_area, cursor);
         const stack = ext.auto_tiler?.find_stack(attach_to.entity);
@@ -423,14 +415,7 @@ export class AutoTiler {
         };
 
         if (placement) {
-            const direction =
-                placement.orientation === lib.Orientation.HORIZONTAL
-                    ? placement.swap
-                        ? Left
-                        : Right
-                    : placement.swap
-                    ? Up
-                    : Down;
+            const direction = placement.orientation === lib.Orientation.HORIZONTAL ? (placement.swap ? Left : Right) : placement.swap ? Up : Down;
 
             if (stack) {
                 if (matching_stack) {
@@ -749,12 +734,12 @@ export function cursor_placement(ext: Ext, area: Rectangular, cursor: Rectangula
         side === LEFT
             ? [HORIZONTAL, true]
             : side === RIGHT
-            ? [HORIZONTAL, false]
-            : side === TOP
-            ? [VERTICAL, true]
-            : side === BOTTOM
-            ? [VERTICAL, false]
-            : null;
+              ? [HORIZONTAL, false]
+              : side === TOP
+                ? [VERTICAL, true]
+                : side === BOTTOM
+                  ? [VERTICAL, false]
+                  : null;
 
     return res ? { orientation: res[0], swap: res[1] } : null;
 }

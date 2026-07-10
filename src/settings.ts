@@ -34,16 +34,12 @@ function settings_new_schema(schema: string): Settings {
     const GioSSS = Gio.SettingsSchemaSource;
     const schemaDir = Gio.File.new_for_path(get_current_path()).get_child('schemas');
 
-    let schemaSource = schemaDir.query_exists(null)
-        ? GioSSS.new_from_directory(schemaDir.get_path(), GioSSS.get_default(), false)
-        : GioSSS.get_default();
+    let schemaSource = schemaDir.query_exists(null) ? GioSSS.new_from_directory(schemaDir.get_path(), GioSSS.get_default(), false) : GioSSS.get_default();
 
     const schemaObj = schemaSource.lookup(schema, true);
 
     if (!schemaObj) {
-        throw new Error(
-            'Schema ' + schema + ' could not be found for extension itero-wm' + '. Please check your installation.',
-        );
+        throw new Error('Schema ' + schema + ' could not be found for extension itero-wm' + '. Please check your installation.');
     }
 
     return new Gio.Settings({ settings_schema: schemaObj });
@@ -125,7 +121,7 @@ export class ExtensionSettings {
 
     is_dark(): boolean {
         const theme = this.theme().toLowerCase();
-        return DARK.some((dark) => theme.includes(dark));
+        return DARK.some(dark => theme.includes(dark));
     }
 
     is_high_contrast(): boolean {

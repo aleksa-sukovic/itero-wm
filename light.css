@@ -1,6 +1,6 @@
 .itero-wm-active-hint {
     border-style: solid;
-    border-color: #FFAD00;
+    border-color: #ffad00;
     border-radius: var(--active-hint-border-radius, 5px);
     box-shadow: inset 0 0 0 1px rgba(200, 200, 200, 0);
 }
@@ -17,8 +17,8 @@
     border-width: 3px;
 }
 
-.itero-wm-search-element:select{
-    background: rgba(0, 0, 0, .1);
+.itero-wm-search-element:select {
+    background: rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     color: #393634;
 }
@@ -45,13 +45,13 @@
 }
 
 .itero-wm-tab-active {
-    background: #FFAD00;
+    background: #ffad00;
 }
 
 .itero-wm-tab-inactive {
-    background: #9B8E8A;
+    background: #9b8e8a;
 }
 
 .itero-wm-tab-urgent {
-    background: #D00;
+    background: #d00;
 }

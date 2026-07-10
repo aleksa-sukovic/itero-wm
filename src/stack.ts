@@ -229,7 +229,7 @@ export class Stack {
         for (const [idx, component] of this.tabs.entries()) {
             let name;
 
-            this.window_exec(id, component.entity, (window) => {
+            this.window_exec(id, component.entity, window => {
                 const actor = window.meta.get_compositor_private();
 
                 if (Ecs.entity_eq(entity, component.entity)) {
@@ -307,10 +307,7 @@ export class Stack {
                 }
             });
 
-        this.active_signals = [
-            window.connect('size-changed', on_window_changed),
-            window.connect('position-changed', on_window_changed),
-        ];
+        this.active_signals = [window.connect('size-changed', on_window_changed), window.connect('position-changed', on_window_changed)];
     }
 
     /** Disconnects signals from the active window in the stack */
@@ -588,7 +585,7 @@ export class Stack {
         let idx = 0;
 
         for (const c of this.tabs) {
-            this.actor_exec(idx, c.entity, (actor) => {
+            this.actor_exec(idx, c.entity, actor => {
                 if (permitted && this.active_id === idx) {
                     actor.show();
                     return;
@@ -663,7 +660,7 @@ export class Stack {
         // Connect tab-clicked signal
         c.button_signal = widget.connect('clicked', () => {
             this.activate(entity);
-            this.window_exec(comp, entity, (window) => {
+            this.window_exec(comp, entity, window => {
                 const actor = window.meta.get_compositor_private();
                 if (actor) {
                     actor.show();
@@ -688,13 +685,13 @@ export class Stack {
         // Attach new signals
         this.tabs[comp].signals = [
             window.meta.connect('notify::title', () => {
-                this.window_exec(comp, entity, (window) => {
+                this.window_exec(comp, entity, window => {
                     this.buttons.get(button)?.set_title(window.title());
                 });
             }),
 
             window.meta.connect('notify::urgent', () => {
-                this.window_exec(comp, entity, (window) => {
+                this.window_exec(comp, entity, window => {
                     if (!window.meta.has_focus()) {
                         this.buttons.get(button)?.set_style_class_name(URGENT_TAB);
                     }
@@ -708,7 +705,7 @@ export class Stack {
     }
 
     private actor_exec(comp: number, entity: Entity, func: (window: Clutter.Actor) => void) {
-        this.window_exec(comp, entity, (window) => {
+        this.window_exec(comp, entity, window => {
             func(window.meta.get_compositor_private() as Clutter.Actor);
         });
     }

@@ -261,13 +261,13 @@ export class ShellWindow {
 
         this.was_hidden = true;
 
-        this.decoration(ext, (xid) => xprop.set_hint(xid, xprop.MOTIF_HINTS, xprop.HIDE_FLAGS));
+        this.decoration(ext, xid => xprop.set_hint(xid, xprop.MOTIF_HINTS, xprop.HIDE_FLAGS));
     }
 
     decoration_show(ext: Ext): void {
         if (!this.was_hidden) return;
 
-        this.decoration(ext, (xid) => xprop.set_hint(xid, xprop.MOTIF_HINTS, xprop.SHOW_FLAGS));
+        this.decoration(ext, xid => xprop.set_hint(xid, xprop.MOTIF_HINTS, xprop.SHOW_FLAGS));
     }
 
     icon(_ext: Ext, size: number): any {
@@ -287,7 +287,7 @@ export class ShellWindow {
     ignore_decoration(): boolean {
         const name = this.meta.get_wm_class();
         if (name === null) return true;
-        return WM_TITLE_BLACKLIST.findIndex((n) => name.startsWith(n)) !== -1;
+        return WM_TITLE_BLACKLIST.findIndex(n => name.startsWith(n)) !== -1;
     }
 
     is_client_decorated(): boolean {
@@ -646,12 +646,7 @@ export class ShellWindow {
                         stack_tab_height = 0;
                     }
 
-                    dimensions = [
-                        x - borderSize,
-                        y - stack_tab_height - borderSize,
-                        width + 2 * borderSize,
-                        height + stack_tab_height + 2 * borderSize,
-                    ];
+                    dimensions = [x - borderSize, y - stack_tab_height - borderSize, width + 2 * borderSize, height + stack_tab_height + 2 * borderSize];
                 }
             } else {
                 dimensions = [x - borderSize, y - borderSize, width + 2 * borderSize, height + 2 * borderSize];

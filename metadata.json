@@ -4,12 +4,5 @@
     "version": 2,
     "uuid": "itero-wm@itero",
     "settings-schema": "org.gnome.shell.extensions.itero-wm",
-    "shell-version": [
-        "45",
-        "46",
-        "47",
-        "48",
-        "49",
-        "50"
-    ]
+    "shell-version": ["45", "46", "47", "48", "49", "50"]
 }

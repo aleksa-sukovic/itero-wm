@@ -129,12 +129,7 @@ export namespace JsonIPC {
         }
     }
 
-    export type Response =
-        | ResponseV.Update
-        | ResponseV.Fill
-        | ResponseV.Close
-        | ResponseV.DesktopEntryR
-        | ResponseV.Context;
+    export type Response = ResponseV.Update | ResponseV.Fill | ResponseV.Close | ResponseV.DesktopEntryR | ResponseV.Context;
 
     namespace ResponseV {
         export type Close = 'Close';
