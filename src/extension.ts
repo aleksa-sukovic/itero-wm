@@ -1957,6 +1957,10 @@ export class Ext extends Ecs.System<ExtEvent> {
             this.update_display_configuration(true);
         });
 
+        this.connect(display, 'restacked', () => {
+            this.focus_window()?.restack();
+        });
+
         this.size_changed_signal = this.connect(wim, 'size-change', (_, actor, event, _before, _after) => {
             if (this.auto_tiler) {
                 let win = this.get_window(actor.get_meta_window());
