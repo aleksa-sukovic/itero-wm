@@ -6,7 +6,10 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
+import { PACKAGE_VERSION } from 'resource:///org/gnome/shell/misc/config.js';
 const { Ok, Err } = result;
+
+const gnome_major_version = Number.parseInt(PACKAGE_VERSION, 10);
 const { Error } = error;
 
 export function is_wayland(): boolean {
@@ -15,6 +18,15 @@ export function is_wayland(): boolean {
     }
     // GNOME 50+ removed X11 support; always Wayland
     return true;
+}
+
+/** Unmaximize a window across supported GNOME Shell versions. */
+export function unmaximize(window: Meta.Window, flags: Meta.MaximizeFlags = Meta.MaximizeFlags.BOTH): void {
+    if (gnome_major_version >= 50) {
+        window.unmaximize();
+    } else {
+        window.unmaximize(flags);
+    }
 }
 
 export function block_signal(object: GObject.Object, signal: SignalID) {

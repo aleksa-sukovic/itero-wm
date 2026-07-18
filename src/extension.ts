@@ -234,13 +234,13 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.conf.reload();
 
         if (this.settings.int) {
-            this.settings.int.connect('changed::gtk-theme', () => {
+            this.connect(this.settings.int, 'changed::gtk-theme', () => {
                 this.register(Events.global(GlobalEvent.GtkThemeChanged));
             });
         }
 
         if (this.settings.shell) {
-            this.settings.shell.connect('changed::name', () => {
+            this.connect(this.settings.shell, 'changed::name', () => {
                 this.register(Events.global(GlobalEvent.GtkShellChanged));
             });
         }
@@ -922,10 +922,10 @@ export class Ext extends Ecs.System<ExtEvent> {
             ) {
                 if (prev.rect().contains(win.rect())) {
                     if (prev.is_maximized()) {
-                        prev.meta.unmaximize(Meta.MaximizeFlags.BOTH);
+                        utils.unmaximize(prev.meta);
                     }
                 } else if (prev.stack) {
-                    prev.meta.unmaximize(Meta.MaximizeFlags.BOTH);
+                    utils.unmaximize(prev.meta);
                     this.auto_tiler.forest.stacks.get(prev.stack)?.restack();
                 }
             }
@@ -1042,7 +1042,7 @@ export class Ext extends Ecs.System<ExtEvent> {
                 const is_same_space = compare.meta.get_monitor() === mon && compare.meta.get_workspace().index() === work;
 
                 if (is_same_space && !this.contains_tag(compare.entity, Tags.Floating) && compare.is_maximized() && win.entity[0] !== compare.entity[0]) {
-                    compare.meta.unmaximize(Meta.MaximizeFlags.BOTH);
+                    utils.unmaximize(compare.meta);
                 }
             }
         }
@@ -1266,9 +1266,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
             if (this.auto_tiler) {
                 if (this.is_floating(win)) {
-                    win.meta.unmaximize(Meta.MaximizeFlags.HORIZONTAL);
-                    win.meta.unmaximize(Meta.MaximizeFlags.VERTICAL);
-                    win.meta.unmaximize(Meta.MaximizeFlags.BOTH);
+                    utils.unmaximize(win.meta);
                 }
 
                 this.register(Events.window_move(this, win, rect));
@@ -2147,7 +2145,7 @@ export class Ext extends Ecs.System<ExtEvent> {
             this.prev_focused = [null, null];
         });
 
-        St.ThemeContext.get_for_stage(global.stage).connect('notify::scale-factor', () => this.update_scale());
+        this.connect(St.ThemeContext.get_for_stage(global.stage), 'notify::scale-factor', () => this.update_scale());
 
         // Post-init
 
