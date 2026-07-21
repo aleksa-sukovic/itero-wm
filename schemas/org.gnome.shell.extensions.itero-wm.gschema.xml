@@ -13,11 +13,6 @@
             <summary>Border radius for active window hint, in pixels</summary>
         </key>
 
-        <key type="b" name="disable-active-border-on-float">
-            <default>false</default>
-            <summary>Disable active hint border on floating windows</summary>
-        </key>
-
         <key type="u" name="gap-inner">
             <default>2</default>
             <summary>Gap between tiled windows, in pixels</summary>

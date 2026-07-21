@@ -454,8 +454,8 @@ export class ShellWindow {
     show_border() {
         if (!this.border) return;
 
-        // Skip border for floating windows when configured
-        if (this.ext.settings.disable_active_border_on_float() && this.ext.is_floating(this)) return;
+        const wm_class = this.meta.get_wm_class() ?? '';
+        if (this.ext.conf.window_shall_hide_border(wm_class, this.title())) return;
 
         this.restack();
         this.update_border_style();

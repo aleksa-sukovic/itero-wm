@@ -65,6 +65,9 @@ export class Config {
     /** List of windows that should float, regardless of their WM hints */
     float: Array<FloatRule> = [];
 
+    /** List of windows that should not show the active border */
+    active_border_exclusions: Array<FloatRule> = [];
+
     /** Logs window details on focus of window */
     log_on_focus: boolean = false;
 
@@ -89,23 +92,11 @@ export class Config {
     }
 
     window_shall_float(wclass: string, title: string): boolean {
-        for (const rule of this.float.concat(DEFAULT_FLOAT_RULES)) {
-            if (rule.class) {
-                if (!new RegExp(rule.class, 'i').test(wclass)) {
-                    continue;
-                }
-            }
+        return matches_window_rule(this.float.concat(DEFAULT_FLOAT_RULES), wclass, title);
+    }
 
-            if (rule.title) {
-                if (!new RegExp(rule.title, 'i').test(title)) {
-                    continue;
-                }
-            }
-
-            return rule.disabled ? false : true;
-        }
-
-        return false;
+    window_shall_hide_border(wclass: string, title: string): boolean {
+        return matches_window_rule(this.active_border_exclusions, wclass, title);
     }
 
     reload() {
@@ -113,7 +104,8 @@ export class Config {
 
         if (conf.tag === 0) {
             let c = conf.value;
-            this.float = c.float;
+            this.float = c.float ?? [];
+            this.active_border_exclusions = c.active_border_exclusions ?? [];
             this.log_on_focus = c.log_on_focus;
         } else {
             log(`error loading conf: ${conf.why}`);
@@ -245,6 +237,17 @@ export class Config {
     sync_to_disk() {
         Config.write(this.to_json());
     }
+}
+
+function matches_window_rule(rules: FloatRule[], wclass: string, title: string): boolean {
+    for (const rule of rules) {
+        if (rule.class && !new RegExp(rule.class, 'i').test(wclass)) continue;
+        if (rule.title && !new RegExp(rule.title, 'i').test(title)) continue;
+
+        return !rule.disabled;
+    }
+
+    return false;
 }
 
 function set_to_json(_key: string, value: any) {

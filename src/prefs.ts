@@ -19,7 +19,6 @@ interface AppWidgets {
     mouse_cursor_focus_position: any;
     log_level: any;
     active_hint: any;
-    disable_active_border_on_float: any;
     active_hint_border_radius: any;
     hint_color_rgba: any;
     floating_exceptions: any;
@@ -98,12 +97,6 @@ function settings_dialog_new(): Gtk.Container {
         Settings.sync();
     });
 
-    app.disable_active_border_on_float.set_active(ext.disable_active_border_on_float());
-    app.disable_active_border_on_float.connect('state-set', (_widget: any, state: boolean) => {
-        ext.set_disable_active_border_on_float(state);
-        Settings.sync();
-    });
-
     app.active_hint_border_radius.set_text(String(ext.active_hint_border_radius()));
     app.active_hint_border_radius.connect('activate', (widget: any) => {
         let parsed = parseInt((widget.get_text() as string).trim());
@@ -172,12 +165,6 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
         margin_start: 24,
     });
 
-    const disable_active_border_on_float_label = new Gtk.Label({
-        label: 'Disable Active Border on Floating Windows',
-        xalign: 0.0,
-        margin_start: 24,
-    });
-
     const active_hint_border_radius_label = new Gtk.Label({
         label: 'Active Border Radius',
         xalign: 0.0,
@@ -204,9 +191,8 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
         snap_to_grid: new Gtk.Switch({ halign: Gtk.Align.END }),
         mouse_cursor_follows_active_window: new Gtk.Switch({ halign: Gtk.Align.END }),
         mouse_cursor_focus_position: build_combo(grid, 4, focus.FocusPosition, 'Mouse Cursor Focus Position', 24),
-        log_level: build_combo(grid, 14, log.LOG_LEVELS, 'Log Level'),
+        log_level: build_combo(grid, 13, log.LOG_LEVELS, 'Log Level'),
         active_hint: new Gtk.Switch({ halign: Gtk.Align.END }),
-        disable_active_border_on_float: new Gtk.Switch({ halign: Gtk.Align.END }),
         active_hint_border_radius: number_entry(),
         hint_color_rgba: new Gtk.ColorButton({ use_alpha: true }),
         floating_exceptions: new Gtk.Button({ label: 'Open' }),
@@ -228,17 +214,14 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
     grid.attach(active_hint_label, 0, 9, 1, 1);
     grid.attach(settings.active_hint, 1, 9, 1, 1);
 
-    grid.attach(disable_active_border_on_float_label, 0, 10, 1, 1);
-    grid.attach(settings.disable_active_border_on_float, 1, 10, 1, 1);
+    grid.attach(active_hint_border_radius_label, 0, 10, 1, 1);
+    grid.attach(settings.active_hint_border_radius, 1, 10, 1, 1);
 
-    grid.attach(active_hint_border_radius_label, 0, 11, 1, 1);
-    grid.attach(settings.active_hint_border_radius, 1, 11, 1, 1);
+    grid.attach(hint_color_rgba_label, 0, 11, 1, 1);
+    grid.attach(settings.hint_color_rgba, 1, 11, 1, 1);
 
-    grid.attach(hint_color_rgba_label, 0, 12, 1, 1);
-    grid.attach(settings.hint_color_rgba, 1, 12, 1, 1);
-
-    grid.attach(floating_exceptions_label, 0, 13, 1, 1);
-    grid.attach(settings.floating_exceptions, 1, 13, 1, 1);
+    grid.attach(floating_exceptions_label, 0, 12, 1, 1);
+    grid.attach(settings.floating_exceptions, 1, 12, 1, 1);
 
     return [settings, grid];
 }

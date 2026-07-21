@@ -1975,7 +1975,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.connect(this.settings.ext, 'changed', (_s, key: string) => {
             switch (key) {
                 case 'active-hint':
-                case 'disable-active-border-on-float':
                     this.show_border_on_focused();
                     break;
                 case 'gap-inner':

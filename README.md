@@ -13,7 +13,7 @@ Itero WM remains open source under the same license terms as the upstream projec
 
 - Rebranded GNOME extension ID, settings schema, dconf path, config directory, settings titles, CSS classes, and extension metadata for Itero WM.
 - `Super+f` maximizes the focused window while respecting outer gaps.
-- `disable_active_border_on_float` suppresses the active hint border for matching floating window rules.
+- `active_border_exclusions` suppresses the active hint border for matching window rules in `config.json`.
 - `Super+Shift+m` toggles the GNOME top bar.
 - `make reload-extension` reloads the extension on Wayland without logging out.
 
