@@ -1841,6 +1841,8 @@ export class Ext extends Ecs.System<ExtEvent> {
         stack.monitor = monitor;
 
         if (stack.floating) {
+            this.monitors.insert(win.entity, [monitor, workspace]);
+
             for (const entity of tabs) {
                 const tab = this.windows.get(entity);
                 if (!tab || Ecs.entity_eq(tab.entity, win.entity)) continue;

@@ -13,6 +13,7 @@ import St from 'gi://St';
 const ACTIVE_TAB = 'itero-wm-tab itero-wm-tab-active';
 const INACTIVE_TAB = 'itero-wm-tab itero-wm-tab-inactive';
 const URGENT_TAB = 'itero-wm-tab itero-wm-tab-urgent';
+const TAB_COLOR_SETTINGS = ['hint-color-rgba', 'inactive-tab-color-rgba', 'active-tab-foreground-rgba', 'inactive-tab-foreground-rgba'];
 
 export var TAB_HEIGHT: number = 24;
 
@@ -139,8 +140,8 @@ export class Stack {
         const button = new TabButton(window);
         const id = this.buttons.insert(button);
 
-        let tab: Tab = { active, entity, signals: [], button: id, button_signal: null };
-        let comp = this.tabs.length;
+        const tab: Tab = { active, entity, signals: [], button: id, button_signal: null };
+        const comp = this.tabs.length;
         this.tabs.push(tab);
         this.bind_hint_events(tab);
         this.watch_signals(comp, id, window);
@@ -189,42 +190,24 @@ export class Stack {
 
         this.active_connect(win.meta, entity);
 
-        let id = 0;
-
-        for (const [idx, component] of this.tabs.entries()) {
-            let name;
-
-            this.window_exec(id, component.entity, window => {
+        for (const [index, component] of this.tabs.entries()) {
+            this.window_exec(index, component.entity, window => {
                 const actor = window.meta.get_compositor_private();
+                component.active = Ecs.entity_eq(entity, component.entity);
 
-                if (Ecs.entity_eq(entity, component.entity)) {
-                    this.active_id = id;
-                    component.active = true;
-                    name = ACTIVE_TAB;
+                if (component.active) {
+                    this.active_id = index;
                     if (actor) actor.show();
-                } else {
-                    component.active = false;
-                    name = INACTIVE_TAB;
-                    if (actor) actor.hide();
+                } else if (actor) {
+                    actor.hide();
                 }
 
-                let button = this.buttons.get(component.button);
+                const button = this.buttons.get(component.button);
                 if (button) {
-                    button.set_style_class_name(name);
-                    let tab_color = '';
-                    let settings = this.ext.settings;
-                    if (component.active) {
-                        tab_color = `background: ${settings.hint_color_rgba()}; color: ${settings.active_tab_foreground_rgba()}`;
-                    } else {
-                        tab_color = `background: ${settings.inactive_tab_color_rgba()}; color: ${settings.inactive_tab_foreground_rgba()}`;
-                    }
-
-                    const tab_border_radius = this.get_tab_border_radius(idx);
-                    button.set_style(`${tab_color}; border-radius: ${tab_border_radius}; padding: 4px 1em;`);
+                    button.set_style_class_name(component.active ? ACTIVE_TAB : INACTIVE_TAB);
+                    button.set_style(this.tab_style(component, index));
                 }
             });
-
-            id += 1;
         }
 
         this.reset_visibility(permitted);
@@ -233,7 +216,7 @@ export class Stack {
 
     // returns the tab button border radius based on it's order.
     // Only curving the corners on the edges.
-    private get_tab_border_radius(idx: Number): string {
+    private get_tab_border_radius(idx: number): string {
         let result = `0px 0px 0px 0px`;
 
         let radius = this.ext.settings.active_hint_border_radius();
@@ -293,9 +276,7 @@ export class Stack {
         let button = this.buttons.get(tab.button);
         if (button) {
             let change_id = settings.ext.connect('changed', (_, key) => {
-                if (['hint-color-rgba', 'inactive-tab-color-rgba', 'active-tab-foreground-rgba', 'inactive-tab-foreground-rgba'].includes(key)) {
-                    this.change_tab_color(tab);
-                }
+                if (TAB_COLOR_SETTINGS.includes(key)) this.change_tab_color(tab);
                 return false;
             });
             button.connect('destroy', () => {
@@ -305,21 +286,19 @@ export class Stack {
         this.change_tab_color(tab);
     }
 
+    private tab_style(tab: Tab, index: number): string {
+        const settings = this.ext.settings;
+        const colors = tab.active
+            ? `background: ${settings.hint_color_rgba()}; color: ${settings.active_tab_foreground_rgba()}`
+            : `background: ${settings.inactive_tab_color_rgba()}; color: ${settings.inactive_tab_foreground_rgba()}`;
+
+        return `${colors}; border-radius: ${this.get_tab_border_radius(index)}; padding: 4px 1em;`;
+    }
+
     private change_tab_color(tab: Tab) {
-        let settings = this.ext.settings;
-        let button = this.buttons.get(tab.button);
-        if (button) {
-            let tab_color = '';
-            const active = Ecs.entity_eq(tab.entity, this.active);
-            if (active) {
-                tab_color = `background: ${settings.hint_color_rgba()}; color: ${settings.active_tab_foreground_rgba()}`;
-            } else {
-                tab_color = `background: ${settings.inactive_tab_color_rgba()}; color: ${settings.inactive_tab_foreground_rgba()}`;
-            }
-            const index = this.tabs.indexOf(tab);
-            const border_radius = this.get_tab_border_radius(index);
-            button.set_style(`${tab_color}; border-radius: ${border_radius}; padding: 4px 1em;`);
-        }
+        const button = this.buttons.get(tab.button);
+        const index = this.tabs.indexOf(tab);
+        if (button && index !== -1) button.set_style(this.tab_style(tab, index));
     }
 
     /** Moves a tab one position without changing the active window. */
