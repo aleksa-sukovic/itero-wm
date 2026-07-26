@@ -424,6 +424,12 @@ export class Ext extends Ecs.System<ExtEvent> {
         return display.get_current_monitor();
     }
 
+    show_stacking_osd(enabled: boolean) {
+        const icon = new Gio.ThemedIcon({ name: 'view-grid-symbolic' });
+        const label = enabled ? 'Stacking enabled' : 'Regular window management';
+        Main.osdWindowManager.showOne(this.active_monitor(), icon, label, null, null);
+    }
+
     active_window_list(): Array<Window.ShellWindow> {
         let workspace = wom.get_active_workspace();
         return this.tab_list(Meta.TabList.NORMAL_ALL, workspace);
@@ -663,26 +669,19 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     stack_select(select: (id: number, stack: stack.Stack) => Entity | null, focus_shift: () => void) {
-        const switched = this.stack_switch((stack: any) => {
-            if (!stack) return false;
+        const switched = this.stack_switch(stack_con => {
+            const id = stack_con.active_id;
+            if (id === -1) return false;
 
-            const stack_con = this.auto_tiler?.forest.stacks.get(stack.idx);
-            if (stack_con) {
-                const id = stack_con.active_id;
-                if (id !== -1) {
-                    const next = select(id, stack_con);
-                    if (next) {
-                        stack_con.activate(next);
-                        const window = this.windows.get(next);
-                        if (window) {
-                            window.activate();
-                            return true;
-                        }
-                    }
-                }
-            }
+            const next = select(id, stack_con);
+            if (!next) return false;
 
-            return false;
+            stack_con.activate(next);
+            const window = this.windows.get(next);
+            if (!window) return false;
+
+            window.activate();
+            return true;
         });
 
         if (!switched) {
@@ -690,14 +689,12 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
     }
 
-    stack_switch(apply: (stack: node.NodeStack) => boolean) {
+    stack_switch(apply: (stack: stack.Stack) => boolean) {
         const window = this.focus_window();
-        if (window) {
-            if (this.auto_tiler) {
-                const node = this.auto_tiler.find_stack(window.entity);
-                return node ? apply(node[1].inner as node.NodeStack) : false;
-            }
-        }
+        if (!window || !this.auto_tiler || window.stack === null) return false;
+
+        const stack_con = this.auto_tiler.forest.stacks.get(window.stack);
+        return stack_con ? apply(stack_con) : false;
     }
 
     /// Fetches the window component from the entity associated with the metacity window metadata.
@@ -774,6 +771,8 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     on_active_workspace_changed() {
+        this.prev_focused = [null, null];
+
         this.register_fn(() => {
             this.exit_modes();
             this.restack();
@@ -835,6 +834,11 @@ export class Ext extends Ecs.System<ExtEvent> {
 
         window.destroying = true;
 
+        if (window.border) {
+            window.border.destroy();
+            window.border = null;
+        }
+
         // Disconnect all signals on this window
         this.window_signals.take_with(win, signals => {
             for (const signal of signals) {
@@ -854,20 +858,33 @@ export class Ext extends Ecs.System<ExtEvent> {
             }
         }
 
+        const stack_object = stack === null ? null : this.auto_tiler?.forest.stacks.get(stack);
+        const floating_stack = stack_object?.floating ?? false;
+
+        if (floating_stack && stack_object && stack !== null) {
+            stack_object.remove_tab(win);
+            if (stack_object.tabs.length === 0) {
+                stack_object.destroy();
+                this.auto_tiler?.forest.stacks.remove(stack);
+            } else {
+                stack_object.auto_activate();
+            }
+        }
+
         if (this.auto_tiler) this.auto_tiler.detach_window(this, win);
 
-        // If destroyed window belonged to a stack, ensure that the next window
+        // If destroyed window belonged to a tiled stack, ensure that the next window
         // to be focused is also a window in the same stack
-        if (this.auto_tiler && stack !== null) {
-            const stack_object = this.auto_tiler.forest.stacks.get(stack);
+        if (this.auto_tiler && stack !== null && !floating_stack) {
+            const tiled_stack = this.auto_tiler.forest.stacks.get(stack);
             const prev = this.prev_focused[1];
-            if (stack_object && prev) {
+            if (tiled_stack && prev) {
                 const prev_window = this.windows.get(prev);
                 if (prev_window) {
                     if (prev_window.stack !== stack) {
-                        stack_object.auto_activate();
-                        this.prev_focused = [null, stack_object.active];
-                        this.windows.get(stack_object.active)?.activate();
+                        tiled_stack.auto_activate();
+                        this.prev_focused = [null, tiled_stack.active];
+                        this.windows.get(tiled_stack.active)?.activate();
                     }
                 }
             }
@@ -1090,6 +1107,17 @@ export class Ext extends Ecs.System<ExtEvent> {
             win.grab = false;
         }
 
+        if (win && win.stack !== null) {
+            const stack = this.auto_tiler?.forest.stacks.get(win.stack);
+            if (stack?.floating) {
+                stack.update_positions(win.rect());
+                stack.restack();
+                this.show_border_on_focused();
+                this.unset_grab_op();
+                return;
+            }
+        }
+
         if (null === win || !win.is_tilable(this)) {
             this.unset_grab_op();
             return;
@@ -1205,6 +1233,30 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
 
         return null;
+    }
+
+    private floating_stack_for(win: Window.ShellWindow): [stack.Stack, number] | null {
+        if (!win.is_tilable(this)) return null;
+
+        const previous = this.previously_focused(win);
+        if (!previous || !this.auto_tiler) return null;
+
+        const previous_window = this.windows.get(previous);
+        if (!previous_window || !this.is_floating(previous_window) || previous_window.stack === null) return null;
+        if (previous_window.workspace_id() !== win.workspace_id()) return null;
+
+        const floating_stack = this.auto_tiler.forest.stacks.get(previous_window.stack);
+        return floating_stack?.floating && floating_stack.accepts_new_windows ? [floating_stack, previous_window.stack] : null;
+    }
+
+    private attach_to_floating_stack(floating_stack: stack.Stack, stack_id: number, win: Window.ShellWindow): boolean {
+        if (this.auto_tiler?.forest.stacks.get(stack_id) !== floating_stack) return false;
+
+        this.add_tag(win.entity, Tags.Floating);
+        win.stack = stack_id;
+        floating_stack.add(win);
+        floating_stack.activate(win.entity);
+        return true;
     }
 
     movement_is_valid(win: Window.ShellWindow, movement: movement.Movement) {
@@ -1757,16 +1809,10 @@ export class Ext extends Ecs.System<ExtEvent> {
         let win = this.get_window(window);
         if (win) {
             const entity = win.entity;
-            actor.connect('destroy', () => {
-                if (win && win.border) {
-                    win.border.destroy();
-                    win.border = null;
-                }
+            const destroy_window = () => this.on_destroy(entity);
 
-                this.on_destroy(entity);
-
-                return false;
-            });
+            actor.connect('destroy', destroy_window);
+            this.window_signals.get_or(entity, () => new Array()).push(win.meta.connect('unmanaged', destroy_window));
 
             if (win.is_tilable(this)) {
                 this.connect_window(win);
@@ -1778,6 +1824,75 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     on_workspace_added(_number: number) {
         this.ignore_display_update = true;
+    }
+
+    /** Moves every tab in a stack to the workspace selected by GNOME. */
+    private move_stack_to_workspace(win: Window.ShellWindow): boolean {
+        if (!this.auto_tiler || win.stack === null) return false;
+
+        const stack = this.auto_tiler.forest.stacks.get(win.stack);
+        if (!stack) return false;
+
+        const workspace = win.workspace_id();
+        const monitor = win.meta.get_monitor();
+        const tabs = stack.tabs.map(tab => tab.entity);
+
+        stack.workspace = workspace;
+        stack.monitor = monitor;
+
+        if (stack.floating) {
+            for (const entity of tabs) {
+                const tab = this.windows.get(entity);
+                if (!tab || Ecs.entity_eq(tab.entity, win.entity)) continue;
+
+                this.size_signals_block(tab);
+                tab.meta.change_workspace_by_index(workspace, false);
+                this.size_signals_unblock(tab);
+                this.monitors.insert(entity, [monitor, workspace]);
+            }
+
+            stack.restack();
+            this.show_border_on_focused();
+            return true;
+        }
+
+        const accepts_new_windows = stack.accepts_new_windows;
+
+        for (const entity of tabs) {
+            this.auto_tiler.detach_window(this, entity);
+        }
+
+        for (const entity of tabs) {
+            const tab = this.windows.get(entity);
+            if (!tab || Ecs.entity_eq(tab.entity, win.entity)) continue;
+
+            this.size_signals_block(tab);
+            tab.meta.change_workspace_by_index(workspace, false);
+            this.size_signals_unblock(tab);
+            this.monitors.insert(entity, [monitor, workspace]);
+        }
+
+        this.auto_tiler.attach_to_workspace(this, win, [monitor, workspace]);
+        this.auto_tiler.create_stack(this, win);
+
+        for (const entity of tabs) {
+            if (Ecs.entity_eq(entity, win.entity)) continue;
+
+            const tab = this.windows.get(entity);
+            if (tab) this.auto_tiler.attach_to_window(this, win, tab, { auto: 0 });
+        }
+
+        if (win.stack !== null) {
+            const moved_stack = this.auto_tiler.forest.stacks.get(win.stack);
+            if (moved_stack) {
+                moved_stack.accepts_new_windows = accepts_new_windows;
+                moved_stack.activate(win.entity);
+                moved_stack.restack();
+            }
+        }
+
+        this.show_border_on_focused();
+        return true;
     }
 
     /** Reattach tiled windows after monitor/workspace changes outside extension-managed moves. */
@@ -1811,6 +1926,14 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     /** Handle workspace change events */
     on_workspace_changed(win: Window.ShellWindow) {
+        if (win.stack !== null) {
+            const stack = this.auto_tiler?.forest.stacks.get(win.stack);
+            if (stack && stack.workspace !== win.workspace_id()) {
+                this.move_stack_to_workspace(win);
+                return;
+            }
+        }
+
         this.retile_on_window_location_change(win);
     }
 
@@ -2683,7 +2806,17 @@ export class Ext extends Ecs.System<ExtEvent> {
                 });
             };
 
-            if (this.auto_tiler && !win.meta.minimized && win.is_tilable(this)) {
+            const floating_stack = this.floating_stack_for(win);
+            if (floating_stack) {
+                let id = actor.connect('first-frame', () => {
+                    if (!this.attach_to_floating_stack(floating_stack[0], floating_stack[1], win) && this.auto_tiler && !win.meta.minimized && win.is_tilable(this)) {
+                        this.auto_tiler.auto_tile(this, win, this.init);
+                    }
+
+                    grab_focus();
+                    actor.disconnect(id);
+                });
+            } else if (this.auto_tiler && !win.meta.minimized && win.is_tilable(this)) {
                 let id = actor.connect('first-frame', () => {
                     this.auto_tiler?.auto_tile(this, win, this.init);
                     grab_focus();

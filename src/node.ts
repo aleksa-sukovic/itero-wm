@@ -5,6 +5,7 @@ import type { Entity } from './ecs.js';
 import type { Ext } from './extension.js';
 import type { Rectangle } from './rectangle.js';
 import type { Stack } from './stack.js';
+import { TAB_HEIGHT } from './stack.js';
 import { ShellWindow } from './window.js';
 
 /** A node is either a fork a window */
@@ -53,6 +54,18 @@ export function stack_find(node: NodeStack, entity: Entity): null | number {
     }
 
     return null;
+}
+
+/** Reorders a tab without removing it from the stack. */
+export function stack_reorder(node: NodeStack, entity: Entity, direction: -1 | 1): boolean {
+    const index = stack_find(node, entity);
+    if (index === null) return false;
+
+    const next_index = index + direction;
+    if (next_index < 0 || next_index >= node.entities.length) return false;
+
+    stack_swap(node, index, next_index);
+    return true;
 }
 
 /** Move the window in a stack to the left, and detach if it it as the end. */
@@ -222,11 +235,11 @@ export class Node {
                 break;
             // Stack
             case 3:
-                const size = ext.dpi * 4;
+                const tab_height = TAB_HEIGHT * ext.dpi;
 
                 this.inner.rect = area.clone();
-                this.inner.rect.y += size * 6;
-                this.inner.rect.height -= size * 6;
+                this.inner.rect.y += tab_height;
+                this.inner.rect.height -= tab_height;
 
                 for (const entity of this.inner.entities) {
                     record(entity, parent, this.inner.rect);

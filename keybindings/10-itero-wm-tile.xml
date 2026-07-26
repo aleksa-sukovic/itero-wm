@@ -5,5 +5,9 @@
   <KeyListEntry name="toggle-tiling" description="Toggles auto-tiling"/>
   <KeyListEntry name="toggle-stacking" description="Toggle stacking mode inside management mode"/>
   <KeyListEntry name="toggle-stacking-global" description="Toggle stacking mode outside management mode"/>
+  <KeyListEntry name="unstack-active-global" description="Unstack the active window"/>
+  <KeyListEntry name="stack-active-global" description="Stack the active window with the previously focused stack"/>
+  <KeyListEntry name="move-tab-left-global" description="Move the active tab left"/>
+  <KeyListEntry name="move-tab-right-global" description="Move the active tab right"/>
   <KeyListEntry name="maximize-with-gaps" description="Maximize window respecting gaps"/>
 </KeyListEntries>

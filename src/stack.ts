@@ -4,7 +4,6 @@ import type { ShellWindow } from './window.js';
 
 import * as Ecs from './ecs.js';
 import * as a from './arena.js';
-import * as utils from './utils.js';
 
 const Arena = a.Arena;
 import Clutter from 'gi://Clutter';
@@ -14,7 +13,6 @@ import St from 'gi://St';
 const ACTIVE_TAB = 'itero-wm-tab itero-wm-tab-active';
 const INACTIVE_TAB = 'itero-wm-tab itero-wm-tab-inactive';
 const URGENT_TAB = 'itero-wm-tab itero-wm-tab-urgent';
-const INACTIVE_TAB_STYLE = '#9B8E8A';
 
 export var TAB_HEIGHT: number = 24;
 
@@ -41,21 +39,6 @@ function stack_widgets_new(): StackWidgets {
     return { tabs };
 }
 
-const ContainerButton = GObject.registerClass(
-    {
-        Signals: { activate: {} },
-    },
-    class ImageButton extends St.Button {
-        _init(icon: St.Icon) {
-            super._init({
-                child: icon,
-                x_expand: true,
-                y_expand: true,
-            });
-        }
-    },
-);
-
 interface TabButton extends St.Button {
     set_title: (title: string) => void;
 }
@@ -66,44 +49,16 @@ const TabButton = GObject.registerClass(
     },
     class TabButton extends St.Button {
         _init(window: ShellWindow) {
-            const icon = window.icon(window.ext, 24);
-            icon.set_x_align(Clutter.ActorAlign.START);
-
             const label = new St.Label({
-                y_expand: true,
-                x_align: Clutter.ActorAlign.START,
+                x_expand: true,
+                x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
-                style: 'padding-left: 8px',
+                style: 'text-align: center',
+                text: window.title(),
             });
-
-            label.text = window.title();
-
-            const container = new St.BoxLayout({
-                y_expand: true,
-                y_align: Clutter.ActorAlign.CENTER,
-            });
-
-            const close_button = new ContainerButton(
-                new St.Icon({
-                    icon_name: 'window-close-symbolic',
-                    icon_size: 24,
-                    y_align: Clutter.ActorAlign.CENTER,
-                }),
-            );
-
-            close_button.connect('clicked', () => {
-                window.meta.delete(global.get_current_time());
-            });
-
-            close_button.set_x_align(Clutter.ActorAlign.END);
-            close_button.set_y_align(Clutter.ActorAlign.CENTER);
-
-            container.add_child(icon);
-            container.add_child(label);
-            container.add_child(close_button);
 
             super._init({
-                child: container,
+                child: label,
                 x_expand: true,
                 y_expand: true,
                 y_align: Clutter.ActorAlign.CENTER,
@@ -127,6 +82,12 @@ export class Stack {
 
     active: Entity;
 
+    /** Whether this stack keeps its windows floating. */
+    floating: boolean;
+
+    /** Whether newly opened windows join this stack. */
+    accepts_new_windows: boolean = true;
+
     active_id: number = 0;
 
     prev_active: null | Entity = null;
@@ -142,23 +103,23 @@ export class Stack {
 
     tabs_height: number = TAB_HEIGHT;
 
-    stack_rect: Rectangular = { width: 0, height: 0, x: 0, y: 0 };
-
     private active_signals: [SignalID, SignalID] | null = null;
 
     private rect: Rectangular = { width: 0, height: 0, x: 0, y: 0 };
 
-    private restacker: SignalID = global.display.connect('restacked', () => this.restack());
+    private restacker: SignalID | null = global.display.connect('restacked', () => this.restack());
 
-    private tabs_destroy: SignalID;
+    private tabs_destroy: SignalID | null;
 
-    constructor(ext: Ext, active: Entity, workspace: number, monitor: number) {
+    private destroyed: boolean = false;
+
+    constructor(ext: Ext, active: Entity, workspace: number, monitor: number, floating: boolean = false) {
         this.ext = ext;
         this.active = active;
+        this.floating = floating;
         this.monitor = monitor;
         this.workspace = workspace;
         this.tabs_height = TAB_HEIGHT * this.ext.dpi;
-
         this.widgets = stack_widgets_new();
 
         global.window_group.add_child(this.widgets.tabs);
@@ -180,8 +141,8 @@ export class Stack {
 
         let tab: Tab = { active, entity, signals: [], button: id, button_signal: null };
         let comp = this.tabs.length;
-        this.bind_hint_events(tab);
         this.tabs.push(tab);
+        this.bind_hint_events(tab);
         this.watch_signals(comp, id, window);
         this.widgets.tabs.add_child(button);
     }
@@ -217,6 +178,10 @@ export class Stack {
         const win = this.ext.windows.get(entity);
         if (!win) return;
 
+        if (this.floating && this.rect.width > 0 && this.rect.height > 0) {
+            win.move(this.ext, this.rect);
+        }
+
         if (!Ecs.entity_eq(entity, this.active)) {
             this.prev_active = this.active;
             this.prev_active_id = this.active_id;
@@ -247,16 +212,15 @@ export class Stack {
                 if (button) {
                     button.set_style_class_name(name);
                     let tab_color = '';
+                    let settings = this.ext.settings;
                     if (component.active) {
-                        let settings = this.ext.settings;
-                        let color_value = settings.hint_color_rgba();
-                        tab_color = `${color_value}; color: ${utils.is_dark(color_value) ? 'white' : 'black'}`;
+                        tab_color = `background: ${settings.hint_color_rgba()}; color: ${settings.active_tab_foreground_rgba()}`;
                     } else {
-                        tab_color = `${INACTIVE_TAB_STYLE}`;
+                        tab_color = `background: ${settings.inactive_tab_color_rgba()}; color: ${settings.inactive_tab_foreground_rgba()}`;
                     }
 
                     const tab_border_radius = this.get_tab_border_radius(idx);
-                    button.set_style(`background: ${tab_color}; border-radius: ${tab_border_radius};`);
+                    button.set_style(`${tab_color}; border-radius: ${tab_border_radius}; padding: 4px 1em;`);
                 }
             });
 
@@ -264,6 +228,7 @@ export class Stack {
         }
 
         this.reset_visibility(permitted);
+        this.ext.show_border_on_focused();
     }
 
     // returns the tab button border radius based on it's order.
@@ -271,14 +236,13 @@ export class Stack {
     private get_tab_border_radius(idx: Number): string {
         let result = `0px 0px 0px 0px`;
 
-        // the minus 4px is to accomodate the inner radius being tighter
-        let radius = Math.max(0, this.ext.settings.active_hint_border_radius() - 4);
+        let radius = this.ext.settings.active_hint_border_radius();
         // only allow a radius up to half the tab_height
         radius = Math.min(radius, Math.trunc(this.tabs_height / 2));
         // set each corner's radius based on it's order
-        if (this.tabs.length === 1) result = `${radius}px`;
-        else if (idx === 0) result = `${radius}px 0px 0px ${radius}px`;
-        else if (idx === this.tabs.length - 1) result = `0px ${radius}px ${radius}px 0px`;
+        if (this.tabs.length === 1) result = `${radius}px ${radius}px 0px 0px`;
+        else if (idx === 0) result = `${radius}px 0px 0px 0px`;
+        else if (idx === this.tabs.length - 1) result = `0px ${radius}px 0px 0px`;
 
         return result;
     }
@@ -300,7 +264,6 @@ export class Stack {
             this.on_grab(() => {
                 const window = this.ext.windows.get(this.active);
                 if (window) {
-                    this.update_positions(window.meta.get_frame_rect());
                     this.window_changed();
                 } else {
                     this.active_disconnect();
@@ -330,7 +293,7 @@ export class Stack {
         let button = this.buttons.get(tab.button);
         if (button) {
             let change_id = settings.ext.connect('changed', (_, key) => {
-                if (key === 'hint-color-rgba') {
+                if (['hint-color-rgba', 'inactive-tab-color-rgba', 'active-tab-foreground-rgba', 'inactive-tab-foreground-rgba'].includes(key)) {
                     this.change_tab_color(tab);
                 }
                 return false;
@@ -347,14 +310,41 @@ export class Stack {
         let button = this.buttons.get(tab.button);
         if (button) {
             let tab_color = '';
-            if (Ecs.entity_eq(tab.entity, this.active)) {
-                let color_value = settings.hint_color_rgba();
-                tab_color = `background: ${color_value}; color: ${utils.is_dark(color_value) ? 'white' : 'black'}`;
+            const active = Ecs.entity_eq(tab.entity, this.active);
+            if (active) {
+                tab_color = `background: ${settings.hint_color_rgba()}; color: ${settings.active_tab_foreground_rgba()}`;
             } else {
-                tab_color = `background: ${INACTIVE_TAB_STYLE}`;
+                tab_color = `background: ${settings.inactive_tab_color_rgba()}; color: ${settings.inactive_tab_foreground_rgba()}`;
             }
-            button.set_style(tab_color);
+            const index = this.tabs.indexOf(tab);
+            const border_radius = this.get_tab_border_radius(index);
+            button.set_style(`${tab_color}; border-radius: ${border_radius}; padding: 4px 1em;`);
         }
+    }
+
+    /** Moves a tab one position without changing the active window. */
+    move_tab(entity: Entity, direction: -1 | 1): boolean {
+        const index = this.tabs.findIndex(tab => Ecs.entity_eq(tab.entity, entity));
+        const next_index = index + direction;
+        if (index < 0 || next_index < 0 || next_index >= this.tabs.length) return false;
+
+        const tab = this.tabs[index];
+        const next_tab = this.tabs[next_index];
+        this.tabs[index] = next_tab;
+        this.tabs[next_index] = tab;
+
+        const button = this.buttons.get(tab.button);
+        const next_button = this.buttons.get(next_tab.button);
+        if (this.widgets && button && next_button) {
+            if (direction < 0) {
+                this.widgets.tabs.set_child_below_sibling(button, next_button);
+            } else {
+                this.widgets.tabs.set_child_above_sibling(button, next_button);
+            }
+        }
+
+        this.activate(this.active);
+        return true;
     }
 
     /** Clears watched tabs and removes all tabs */
@@ -398,7 +388,14 @@ export class Stack {
 
     /** Disconnects this stack's signal, and destroys its widgets */
     destroy() {
-        global.display.disconnect(this.restacker);
+        if (this.destroyed) return;
+        this.destroyed = true;
+
+        if (this.restacker !== null) {
+            global.display.disconnect(this.restacker);
+            this.restacker = null;
+        }
+
         this.active_disconnect();
 
         // Disconnect stack signals from each window, and unhide them.
@@ -413,14 +410,13 @@ export class Stack {
             }
         }
 
-        for (const b of this.buttons.values()) {
-            try {
-                b.destroy();
-            } catch (e) {}
-        }
+        this.tabs.splice(0);
+        this.buttons.truncate(0);
 
         if (this.widgets) {
             const tabs = this.widgets.tabs;
+            if (this.tabs_destroy !== null) tabs.disconnect(this.tabs_destroy);
+            this.tabs_destroy = null;
             this.widgets = null;
             tabs.destroy();
         }
@@ -447,8 +443,8 @@ export class Stack {
     /** Workaround for when GNOME Shell destroys our widgets when they're reparented
      *  in an active workspace change. */
     recreate_widgets() {
-        if (this.widgets !== null) {
-            this.widgets.tabs.disconnect(this.tabs_destroy);
+        if (!this.destroyed && this.widgets !== null) {
+            if (this.tabs_destroy !== null) this.widgets.tabs.disconnect(this.tabs_destroy);
             this.widgets = stack_widgets_new();
 
             global.window_group.add_child(this.widgets.tabs);
@@ -559,11 +555,13 @@ export class Stack {
         }
 
         const stack_parent = this.widgets.tabs.get_parent();
-        if (stack_parent) {
-            stack_parent.remove_child(this.widgets.tabs);
-        }
+        if (stack_parent !== parent) {
+            if (stack_parent) {
+                stack_parent.remove_child(this.widgets.tabs);
+            }
 
-        parent.add_child(this.widgets.tabs);
+            parent.add_child(this.widgets.tabs);
+        }
 
         // Reposition actors on the screen, being careful about not displaying over maximized windows
         if (!window.meta.is_fullscreen() && !window.is_maximized() && !this.ext.maximized_on_active_display()) {
@@ -628,21 +626,14 @@ export class Stack {
 
     /** Updates the dimensions and positions of the stack's actors */
     update_positions(rect: Rectangular) {
-        if (!this.widgets) return;
+        if (!this.widgets || rect.width <= 0 || rect.height <= 0) return;
 
         this.rect = rect;
 
         this.tabs_height = TAB_HEIGHT * this.ext.dpi;
 
-        this.stack_rect = {
-            x: rect.x,
-            y: rect.y - this.tabs_height,
-            width: rect.width,
-            height: this.tabs_height + rect.height,
-        };
-
         this.widgets.tabs.x = rect.x;
-        this.widgets.tabs.y = this.stack_rect.y;
+        this.widgets.tabs.y = rect.y - this.tabs_height;
         this.widgets.tabs.height = this.tabs_height;
         this.widgets.tabs.width = rect.width;
     }

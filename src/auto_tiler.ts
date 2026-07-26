@@ -141,8 +141,15 @@ export class AutoTiler {
     }
 
     /** Tiles a window into another */
-    attach_to_window(ext: Ext, attachee: ShellWindow, attacher: ShellWindow, move_by: MoveBy, stack_from_left: boolean = true): boolean {
-        let attached = this.forest.attach_window(ext, attachee.entity, attacher.entity, move_by, stack_from_left);
+    attach_to_window(
+        ext: Ext,
+        attachee: ShellWindow,
+        attacher: ShellWindow,
+        move_by: MoveBy,
+        stack_from_left: boolean = true,
+        stack_if_possible: boolean = true,
+    ): boolean {
+        let attached = this.forest.attach_window(ext, attachee.entity, attacher.entity, move_by, stack_from_left, stack_if_possible);
 
         if (attached) {
             const workspace_id = ext.monitors.get(attachee.entity) ?? ext.workspace_id(attachee);
@@ -201,7 +208,8 @@ export class AutoTiler {
             this.attach_to_workspace(ext, win, ext.workspace_id(win));
         } else {
             log.debug(`attaching to window ${win.entity}`);
-            this.attach_to_window(ext, result.value, win, { auto: 0 });
+            const stack = result.value.stack === null ? null : this.forest.stacks.get(result.value.stack);
+            this.attach_to_window(ext, result.value, win, { auto: 0 }, true, stack?.accepts_new_windows ?? true);
         }
     }
 
@@ -528,10 +536,47 @@ export class AutoTiler {
         const focused = window ?? ext.focus_window();
         if (!focused) return;
 
-        // Disable floating if floating is enabled
-        if (ext.contains_tag(focused.entity, Tags.Floating)) {
-            ext.delete_tag(focused.entity, Tags.Floating);
-            this.auto_tile(ext, focused, false);
+        if (!focused.is_tilable(ext) && !ext.contains_tag(focused.entity, Tags.Floating)) return;
+
+        if (focused.stack !== null) {
+            const stack = this.forest.stacks.get(focused.stack);
+            if (stack) {
+                if (stack.tabs.length === 1) {
+                    if (stack.floating) {
+                        stack.destroy();
+                        this.forest.stacks.remove(focused.stack);
+                        focused.stack = null;
+                        focused.update_border_layout();
+                        focused.show_border();
+                        ext.show_stacking_osd(false);
+                    } else {
+                        const fork_entity = this.attached.get(focused.entity);
+                        const fork = fork_entity ? this.forest.forks.get(fork_entity) : null;
+                        if (fork) {
+                            this.unstack(ext, fork, focused, true);
+                            ext.show_stacking_osd(false);
+                        }
+                    }
+                    return;
+                }
+
+                stack.accepts_new_windows = !stack.accepts_new_windows;
+                ext.show_stacking_osd(stack.accepts_new_windows);
+                return;
+            }
+        }
+
+        if (ext.is_floating(focused)) {
+            const stack = new Stack(ext, focused.entity, focused.workspace_id(), focused.meta.get_monitor(), true);
+            const stack_id = this.forest.stacks.insert(stack);
+            focused.stack = stack_id;
+            stack.add(focused);
+            stack.update_positions(focused.rect());
+            stack.activate(focused.entity);
+            focused.update_border_layout();
+            focused.show_border();
+            ext.show_stacking_osd(true);
+            return;
         }
 
         const fork_entity = this.attached.get(focused.entity);
@@ -540,8 +585,91 @@ export class AutoTiler {
             const fork = this.forest.forks.get(fork_entity);
             if (fork) {
                 this.unstack(ext, fork, focused, true);
+                ext.show_stacking_osd(true);
             }
         }
+    }
+
+    /** Reorders the focused tab without removing it from its stack. */
+    move_tab(ext: Ext, direction: -1 | 1) {
+        const focused = ext.focus_window();
+        if (!focused || focused.stack === null) return;
+
+        const stack = this.forest.stacks.get(focused.stack);
+        if (!stack) return;
+
+        if (!stack.floating) {
+            const stack_node = this.find_stack(focused.entity);
+            if (!stack_node || !node.stack_reorder(stack_node[1].inner as node.NodeStack, focused.entity, direction)) return;
+        }
+
+        stack.move_tab(focused.entity, direction);
+    }
+
+    /** Adds the focused window to the previously focused window's stack. */
+    stack_active(ext: Ext) {
+        const focused = ext.focus_window();
+        if (!focused || focused.stack !== null) return;
+
+        const target_entity = ext.previously_focused(focused);
+        const target = target_entity === null ? null : ext.windows.get(target_entity);
+        if (!target || target.stack === null) return;
+        if (target.workspace_id() !== focused.workspace_id() || target.meta.get_monitor() !== focused.meta.get_monitor()) return;
+
+        const target_stack = this.forest.stacks.get(target.stack);
+        if (!target_stack) return;
+
+        if (target_stack.floating) {
+            this.detach_window(ext, focused.entity);
+            ext.add_tag(focused.entity, Tags.Floating);
+            focused.stack = target.stack;
+            target_stack.add(focused);
+            target_stack.activate(focused.entity);
+            return;
+        }
+
+        this.detach_window(ext, focused.entity);
+        ext.delete_tag(focused.entity, Tags.Floating);
+        if (!this.attach_to_window(ext, target, focused, { auto: 0 })) {
+            this.attach_to_workspace(ext, focused, ext.workspace_id(focused));
+        }
+    }
+
+    /** Removes the focused window from its stack while preserving its layout mode. */
+    unstack_active(ext: Ext) {
+        const focused = ext.focus_window();
+        if (!focused || focused.stack === null) return;
+
+        const stack_id = focused.stack;
+        const stack = this.forest.stacks.get(stack_id);
+        if (!stack) return;
+
+        if (stack.floating) {
+            stack.remove_tab(focused.entity);
+            focused.stack = null;
+
+            if (stack.tabs.length === 0) {
+                stack.destroy();
+                this.forest.stacks.remove(stack_id);
+            } else {
+                stack.auto_activate();
+            }
+
+            focused.update_border_layout();
+            focused.show_border();
+            return;
+        }
+
+        const stack_node = this.find_stack(focused.entity);
+        if (!stack_node) return;
+
+        const [fork] = stack_node;
+        if (stack.tabs.length === 1) {
+            this.unstack(ext, fork, focused);
+            return;
+        }
+
+        ext.tiler.move_from_stack(ext, stack_node, focused, tiling.Direction.Right, true);
     }
 
     unstack(ext: Ext, fork: Fork, win: ShellWindow, toggled: boolean = false) {
@@ -583,6 +711,7 @@ export class AutoTiler {
         }
 
         this.tile(ext, fork, fork.area);
+        ext.show_border_on_focused();
     }
 
     stack_left(ext: Ext, fork: Fork, window: ShellWindow) {
@@ -629,6 +758,7 @@ export class AutoTiler {
 
                 container.update_positions(stack.rect);
                 container.auto_activate();
+                ext.show_border_on_focused();
             }
         } else {
             log.warn('stack rect was null');

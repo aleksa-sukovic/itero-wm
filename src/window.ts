@@ -556,7 +556,7 @@ export class ShellWindow {
                         stack_tab_height = 0;
                     }
 
-                    dimensions = [x - borderSize, y - stack_tab_height - borderSize, width + 2 * borderSize, height + stack_tab_height + 2 * borderSize];
+                    dimensions = [x - borderSize, y - stack_tab_height, width + 2 * borderSize, height + stack_tab_height + borderSize];
                 }
             } else {
                 dimensions = [x - borderSize, y - borderSize, width + 2 * borderSize, height + 2 * borderSize];
@@ -564,6 +564,11 @@ export class ShellWindow {
 
             if (dimensions) {
                 [x, y, width, height] = dimensions;
+
+                if (width <= 0 || height <= 0) {
+                    border.hide();
+                    return;
+                }
 
                 const workspace = this.meta.get_workspace();
 

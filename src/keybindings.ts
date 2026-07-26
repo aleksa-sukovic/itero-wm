@@ -257,6 +257,14 @@ export class Keybindings {
 
             'toggle-stacking-global': () => ext.auto_tiler?.toggle_stacking(ext),
 
+            'unstack-active-global': () => ext.auto_tiler?.unstack_active(ext),
+
+            'stack-active-global': () => ext.auto_tiler?.stack_active(ext),
+
+            'move-tab-left-global': () => ext.auto_tiler?.move_tab(ext, -1),
+
+            'move-tab-right-global': () => ext.auto_tiler?.move_tab(ext, 1),
+
             'tile-move-left-global': () => ext.tiler.move_left(ext, ext.focus_window()?.entity),
 
             'tile-move-down-global': () => ext.tiler.move_down(ext, ext.focus_window()?.entity),

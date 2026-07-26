@@ -55,7 +55,13 @@ const GAP_OUTER = 'gap-outer';
 const ROW_SIZE = 'row-size';
 const SNAP_TO_GRID = 'snap-to-grid';
 const HINT_COLOR_RGBA = 'hint-color-rgba';
+const INACTIVE_TAB_COLOR_RGBA = 'inactive-tab-color-rgba';
+const ACTIVE_TAB_FOREGROUND_RGBA = 'active-tab-foreground-rgba';
+const INACTIVE_TAB_FOREGROUND_RGBA = 'inactive-tab-foreground-rgba';
 const DEFAULT_RGBA_COLOR = 'rgba(251, 184, 108, 1)'; //pop-orange
+const DEFAULT_INACTIVE_TAB_COLOR = 'rgba(220, 220, 220, 1)';
+const DEFAULT_ACTIVE_TAB_FOREGROUND = 'rgba(0, 0, 0, 1)';
+const DEFAULT_INACTIVE_TAB_FOREGROUND = 'rgba(80, 80, 80, 1)';
 const LOG_LEVEL = 'log-level';
 const TOP_BAR_VISIBLE = 'top-bar-visible';
 const MOUSE_CURSOR_FOLLOWS_ACTIVE_WINDOW = 'mouse-cursor-follows-active-window';
@@ -99,15 +105,25 @@ export class ExtensionSettings {
         return this.ext.get_uint(GAP_OUTER);
     }
 
+    private color_rgba(key: string, fallback: string): string {
+        const rgba = this.ext.get_string(key);
+        return new Gdk.RGBA().parse(rgba) ? rgba : fallback;
+    }
+
     hint_color_rgba() {
-        let rgba = this.ext.get_string(HINT_COLOR_RGBA);
-        let valid_color = new Gdk.RGBA().parse(rgba);
+        return this.color_rgba(HINT_COLOR_RGBA, DEFAULT_RGBA_COLOR);
+    }
 
-        if (!valid_color) {
-            return DEFAULT_RGBA_COLOR;
-        }
+    inactive_tab_color_rgba() {
+        return this.color_rgba(INACTIVE_TAB_COLOR_RGBA, DEFAULT_INACTIVE_TAB_COLOR);
+    }
 
-        return rgba;
+    active_tab_foreground_rgba() {
+        return this.color_rgba(ACTIVE_TAB_FOREGROUND_RGBA, DEFAULT_ACTIVE_TAB_FOREGROUND);
+    }
+
+    inactive_tab_foreground_rgba() {
+        return this.color_rgba(INACTIVE_TAB_FOREGROUND_RGBA, DEFAULT_INACTIVE_TAB_FOREGROUND);
     }
 
     theme(): string {

@@ -187,7 +187,14 @@ export class Forest extends Ecs.World {
     }
 
     /** Attaches a `new` window to the fork which `onto` is attached to. */
-    attach_window(ext: Ext, onto_entity: Entity, new_entity: Entity, place_by: MoveBy, stack_from_left: boolean): [Entity, Fork.Fork] | null {
+    attach_window(
+        ext: Ext,
+        onto_entity: Entity,
+        new_entity: Entity,
+        place_by: MoveBy,
+        stack_from_left: boolean,
+        stack_if_possible: boolean = true,
+    ): [Entity, Fork.Fork] | null {
         /** Place a window in a fork based on where the window was originally located */
         function place_by_keyboard(fork: Fork.Fork, src: Rectangular, left: Rectangle, right: Rectangle) {
             const from: [number, number] = [src.x + src.width / 2, src.y + src.height / 2];
@@ -276,14 +283,28 @@ export class Forest extends Ecs.World {
                     return this._attach(onto_entity, new_entity, this.on_attach, entity, fork, null);
                 }
             } else if (fork.left.is_in_stack(onto_entity)) {
-                const stack = fork.left.inner as Node.NodeStack;
-                return this.attach_stack(ext, stack, fork, new_entity, stack_from_left);
+                if (stack_if_possible) {
+                    const stack = fork.left.inner as Node.NodeStack;
+                    return this.attach_stack(ext, stack, fork, new_entity, stack_from_left);
+                }
+
+                if (fork.right) {
+                    return fork_and_place_on_left(entity, fork);
+                }
+
+                fork.right = right_node;
+                fork.set_ratio(fork.length() / 2);
+                return this._attach(onto_entity, new_entity, this.on_attach, entity, fork, null);
             } else if (fork.right) {
                 if (fork.right.is_window(onto_entity)) {
                     return fork_and_place_on_right(entity, fork, fork.right);
                 } else if (fork.right.is_in_stack(onto_entity)) {
-                    const stack = fork.right.inner as Node.NodeStack;
-                    return this.attach_stack(ext, stack, fork, new_entity, stack_from_left);
+                    if (stack_if_possible) {
+                        const stack = fork.right.inner as Node.NodeStack;
+                        return this.attach_stack(ext, stack, fork, new_entity, stack_from_left);
+                    }
+
+                    return fork_and_place_on_right(entity, fork, fork.right);
                 }
             }
         }

@@ -97,6 +97,26 @@
             <summary>Toggle stacking mode outside management mode</summary>
         </key>
 
+        <key type="as" name="unstack-active-global">
+            <default><![CDATA[[]]]></default>
+            <summary>Unstack the active window outside management mode</summary>
+        </key>
+
+        <key type="as" name="stack-active-global">
+            <default><![CDATA[[]]]></default>
+            <summary>Stack the active window with the previously focused stack</summary>
+        </key>
+
+        <key type="as" name="move-tab-left-global">
+            <default><![CDATA[[]]]></default>
+            <summary>Move the active tab left</summary>
+        </key>
+
+        <key type="as" name="move-tab-right-global">
+            <default><![CDATA[[]]]></default>
+            <summary>Move the active tab right</summary>
+        </key>
+
         <key type="as" name="management-orientation">
             <default><![CDATA[['o']]]></default>
             <summary>Toggle tiling orientation</summary>
@@ -301,6 +321,18 @@
         <key type="s" name="hint-color-rgba">
             <default>'rgba(251, 184, 108, 1)'</default>
             <summary>The current active-hint-color in RGBA</summary>
+        </key>
+        <key type="s" name="inactive-tab-color-rgba">
+            <default>'rgba(220, 220, 220, 1)'</default>
+            <summary>The background color for inactive stack tabs</summary>
+        </key>
+        <key type="s" name="active-tab-foreground-rgba">
+            <default>'rgba(0, 0, 0, 1)'</default>
+            <summary>The foreground color for active stack tabs</summary>
+        </key>
+        <key type="s" name="inactive-tab-foreground-rgba">
+            <default>'rgba(80, 80, 80, 1)'</default>
+            <summary>The foreground color for inactive stack tabs</summary>
         </key>
         <key type="u" name="log-level">
             <default>0</default>
