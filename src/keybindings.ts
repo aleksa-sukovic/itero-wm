@@ -286,6 +286,8 @@ export class Keybindings {
             'itero-workspace-down': () => ext.move_workspace(Meta.DisplayDirection.DOWN),
 
             'maximize-with-gaps': () => {
+                if (ext.auto_tiler?.toggle_stack_maximized(ext)) return;
+
                 const win = ext.focus_window();
                 if (!win) return;
 

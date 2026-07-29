@@ -54,6 +54,9 @@ Tasks for a tester to verify when approving a patch. Use complex window layouts 
 - [ ] Stacks can be resized with the mouse.
 - [ ] Lock and unlock the screen-- stacks should still exist and windows should not have moved.
 - [ ] Full-screen an application within the stack, then quit the application-- the remaining tabs should be visible.
+- [ ] `Super` `G` floats and re-tiles every tab in a stack while preserving tab order and geometry.
+- [ ] The active border is drawn above the tab bar after floating, tiling, maximizing, and restoring a stack.
+- [ ] `Super` `F` maximizes and restores every tab in a stack as one unit.
 
 ### Workspaces
 

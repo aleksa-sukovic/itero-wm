@@ -89,6 +89,11 @@ export class Stack {
     /** Whether newly opened windows join this stack. */
     accepts_new_windows: boolean = true;
 
+    /** State used by the stack-wide maximize shortcut. */
+    maximized_by_toggle: boolean = false;
+    maximized_from_tiled: boolean = false;
+    saved_rect: Rectangular | null = null;
+
     active_id: number = 0;
 
     prev_active: null | Entity = null;
@@ -243,17 +248,7 @@ export class Stack {
 
     private active_reconnect(window: Meta.Window) {
         // Attach this callback on both signals of the window
-        const on_window_changed = () =>
-            this.on_grab(() => {
-                const window = this.ext.windows.get(this.active);
-                if (window) {
-                    // Floating stacks are not repositioned by the tiling forest
-                    if (this.floating) this.update_positions(window.rect());
-                    this.window_changed();
-                } else {
-                    this.active_disconnect();
-                }
-            });
+        const on_window_changed = () => this.refresh();
 
         this.active_signals = [window.connect('size-changed', on_window_changed), window.connect('position-changed', on_window_changed)];
     }
@@ -587,6 +582,21 @@ export class Stack {
 
             this.reset_visibility(permitted);
         });
+    }
+
+    /** Refreshes the tab bar after its active window changes geometry. */
+    refresh() {
+        const window = this.ext.windows.get(this.active);
+        if (!window) {
+            this.active_disconnect();
+            return;
+        }
+
+        // Both floating and tiled stacks can move independently of a layout
+        // recalculation (for example, while switching between the two modes).
+        this.update_positions(window.rect());
+        this.restack();
+        this.window_changed();
     }
 
     /** Changes visibility of the stack's actors */

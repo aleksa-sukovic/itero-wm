@@ -176,7 +176,7 @@ export class AutoTiler {
     }
 
     /** Tile a window onto a workspace */
-    attach_to_workspace(ext: Ext, win: ShellWindow, id: [number, number]) {
+    attach_to_workspace(ext: Ext, win: ShellWindow, id: [number, number], stack_if_possible: boolean = true) {
         id = this.sync_workspace(ext, win, id);
 
         const toplevel = this.forest.find_toplevel(id);
@@ -184,7 +184,7 @@ export class AutoTiler {
         if (toplevel) {
             const onto = this.forest.largest_window_on(ext, toplevel);
             if (onto) {
-                if (this.attach_to_window(ext, onto, win, { auto: 0 })) {
+                if (this.attach_to_window(ext, onto, win, { auto: 0 }, true, stack_if_possible)) {
                     return;
                 }
             }
@@ -483,6 +483,18 @@ export class AutoTiler {
         const focused = ext.focus_window();
         if (!focused) return;
 
+        const stack = focused.stack === null ? null : this.forest.stacks.get(focused.stack);
+        if (stack) {
+            this.clear_stack_maximize_state(ext, stack);
+            if (stack.floating) {
+                this.tile_stack(ext, stack, focused);
+            } else {
+                this.float_stack(ext, stack, focused);
+            }
+            this.refresh_stacks_after_mode_change(ext, focused);
+            return;
+        }
+
         // Clear any maximize-toggle saved state
         focused.maximized_by_toggle = false;
         focused.saved_maximize = null;
@@ -522,7 +534,131 @@ export class AutoTiler {
             }
         }
 
-        ext.register_fn(() => focused.activate(true));
+        this.refresh_stacks_after_mode_change(ext, focused);
+    }
+
+    /** Converts every tab in a tiled stack into one floating stack. */
+    private float_stack(ext: Ext, source: stack.Stack, focused: ShellWindow): stack.Stack | null {
+        const windows = source.tabs.map(tab => ext.windows.get(tab.entity)).filter((window): window is ShellWindow => window !== undefined);
+        if (!windows.some(window => ecs.entity_eq(window.entity, focused.entity))) return null;
+
+        const accepts_new_windows = source.accepts_new_windows;
+        for (const window of windows) this.detach_window(ext, window.entity);
+        for (const window of windows) ext.add_tag(window.entity, Tags.Floating);
+
+        const rect = ext.center_floating(focused);
+        const floating = new Stack(ext, focused.entity, focused.workspace_id(), focused.meta.get_monitor(), true);
+        const stack_id = this.forest.stacks.insert(floating);
+
+        floating.accepts_new_windows = accepts_new_windows;
+        for (const window of windows) {
+            window.stack = stack_id;
+            floating.add(window);
+        }
+
+        floating.update_positions(rect);
+        floating.activate(focused.entity);
+        return floating;
+    }
+
+    /** Converts every tab in a floating stack back into one tiled stack. */
+    private tile_stack(ext: Ext, source: stack.Stack, focused: ShellWindow): stack.Stack | null {
+        const windows = source.tabs.map(tab => ext.windows.get(tab.entity)).filter((window): window is ShellWindow => window !== undefined);
+        if (!windows.some(window => ecs.entity_eq(window.entity, focused.entity))) return null;
+
+        const accepts_new_windows = source.accepts_new_windows;
+        const stack_id = focused.stack;
+        source.destroy();
+        if (stack_id !== null) this.forest.stacks.remove(stack_id);
+
+        for (const window of windows) {
+            window.stack = null;
+            ext.delete_tag(window.entity, Tags.Floating);
+        }
+
+        // Rebuild from the first tab so the forest and tab bar retain their
+        // existing order even when a later tab is focused during the toggle.
+        const anchor = windows[0];
+
+        // Do not merge this stack into another stack while rebuilding it.
+        this.attach_to_workspace(ext, anchor, ext.workspace_id(anchor), false);
+        this.create_stack(ext, anchor);
+
+        for (const window of windows) {
+            if (!ecs.entity_eq(window.entity, anchor.entity)) {
+                this.attach_to_window(ext, anchor, window, { auto: 0 });
+            }
+        }
+
+        const tiled = anchor.stack === null ? null : this.forest.stacks.get(anchor.stack);
+        if (tiled) {
+            tiled.accepts_new_windows = accepts_new_windows;
+            tiled.activate(focused.entity);
+        }
+
+        return tiled;
+    }
+
+    private clear_stack_maximize_state(ext: Ext, stack: stack.Stack) {
+        stack.maximized_by_toggle = false;
+        stack.maximized_from_tiled = false;
+        stack.saved_rect = null;
+
+        for (const tab of stack.tabs) {
+            const window = ext.windows.get(tab.entity);
+            if (!window) continue;
+            window.maximized_by_toggle = false;
+            window.saved_maximize = null;
+            window.saved_rect = null;
+        }
+    }
+
+    private refresh_stacks_after_mode_change(ext: Ext, focused: ShellWindow) {
+        ext.register_fn(() => {
+            focused.activate(true);
+            for (const stack of this.forest.stacks.values()) stack.refresh();
+        });
+    }
+
+    /** Maximizes or restores every tab in the focused stack as one unit. */
+    toggle_stack_maximized(ext: Ext): boolean {
+        const focused = ext.focus_window();
+        if (!focused || focused.stack === null) return false;
+
+        const stack = this.forest.stacks.get(focused.stack);
+        if (!stack) return false;
+
+        if (stack.maximized_by_toggle) {
+            if (stack.maximized_from_tiled) {
+                const tiled = this.tile_stack(ext, stack, focused);
+                if (tiled) this.clear_stack_maximize_state(ext, tiled);
+            } else if (stack.saved_rect) {
+                const rect = stack.saved_rect;
+                this.clear_stack_maximize_state(ext, stack);
+                stack.update_positions(rect);
+                focused.move(ext, rect);
+            }
+        } else {
+            const maximized_from_tiled = !stack.floating;
+            const floating = maximized_from_tiled ? this.float_stack(ext, stack, focused) : stack;
+            if (!floating) return true;
+
+            floating.maximized_by_toggle = true;
+            floating.maximized_from_tiled = maximized_from_tiled;
+            floating.saved_rect = focused.rect().clone();
+
+            const area = ext.monitor_work_area(focused.meta.get_monitor());
+            area.x += ext.gap_outer;
+            area.y += ext.gap_outer;
+            area.width -= ext.gap_outer * 2;
+            area.height -= ext.gap_outer * 2;
+
+            floating.update_positions(area);
+            focused.move(ext, area);
+        }
+
+        this.refresh_stacks_after_mode_change(ext, focused);
+        return true;
     }
 
     toggle_orientation(ext: Ext, window: ShellWindow) {
@@ -758,6 +894,7 @@ export class AutoTiler {
 
                 container.update_positions(stack.rect);
                 container.auto_activate();
+                container.restack();
                 ext.show_border_on_focused();
             }
         } else {

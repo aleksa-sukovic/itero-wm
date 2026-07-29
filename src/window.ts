@@ -520,7 +520,13 @@ export class ShellWindow {
         const win_group = global.window_group;
 
         if (actor && border && win_group && border.get_parent() === actor.get_parent()) {
-            win_group.set_child_above_sibling(border, actor);
+            const stack = this.stack === null ? null : this.ext.auto_tiler?.forest.stacks.get(this.stack);
+            const tabs = stack?.widgets?.tabs;
+
+            // Stack tabs sit above their window actor. Keep the active border
+            // above them as well, otherwise its top edge is obscured until a
+            // subsequent focus change happens to restack it again.
+            win_group.set_child_above_sibling(border, tabs && tabs.get_parent() === actor.get_parent() ? tabs : actor);
         }
     }
 

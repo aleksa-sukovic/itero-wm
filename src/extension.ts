@@ -763,6 +763,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         const centered = this.center_rect_on_monitor(monitor, new Rectangle([0, 0, width, height]));
 
         win.move(this, centered);
+        return centered;
     }
 
     monitor_area(monitor: number): Rectangle | null {
