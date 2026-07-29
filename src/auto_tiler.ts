@@ -538,7 +538,7 @@ export class AutoTiler {
     }
 
     /** Converts every tab in a tiled stack into one floating stack. */
-    private float_stack(ext: Ext, source: stack.Stack, focused: ShellWindow): stack.Stack | null {
+    private float_stack(ext: Ext, source: stack.Stack, focused: ShellWindow, rect?: Rectangular): stack.Stack | null {
         const windows = source.tabs.map(tab => ext.windows.get(tab.entity)).filter((window): window is ShellWindow => window !== undefined);
         if (!windows.some(window => ecs.entity_eq(window.entity, focused.entity))) return null;
 
@@ -546,7 +546,7 @@ export class AutoTiler {
         for (const window of windows) this.detach_window(ext, window.entity);
         for (const window of windows) ext.add_tag(window.entity, Tags.Floating);
 
-        const rect = ext.center_floating(focused);
+        const target_rect = rect ?? ext.center_floating(focused);
         const floating = new Stack(ext, focused.entity, focused.workspace_id(), focused.meta.get_monitor(), true);
         const stack_id = this.forest.stacks.insert(floating);
 
@@ -556,7 +556,7 @@ export class AutoTiler {
             floating.add(window);
         }
 
-        floating.update_positions(rect);
+        floating.update_positions(target_rect);
         floating.activate(focused.entity);
         return floating;
     }
@@ -640,21 +640,31 @@ export class AutoTiler {
             }
         } else {
             const maximized_from_tiled = !stack.floating;
-            const floating = maximized_from_tiled ? this.float_stack(ext, stack, focused) : stack;
-            if (!floating) return true;
-
-            floating.maximized_by_toggle = true;
-            floating.maximized_from_tiled = maximized_from_tiled;
-            floating.saved_rect = focused.rect().clone();
-
             const area = ext.monitor_work_area(focused.meta.get_monitor());
             area.x += ext.gap_outer;
             area.y += ext.gap_outer;
             area.width -= ext.gap_outer * 2;
             area.height -= ext.gap_outer * 2;
 
-            floating.update_positions(area);
-            focused.move(ext, area);
+            // A stack's window occupies the area below its tabs. Treat the
+            // tab bar as part of the maximized stack instead of placing it
+            // above the work area (and therefore under the top panel).
+            const rect = area.clone();
+            rect.y += stack.tabs_height;
+            rect.height -= stack.tabs_height;
+
+            // Start a newly-floating stack at its final maximized geometry.
+            // Going through the default centered geometry first creates a
+            // second queued move that can win the initial size-event race.
+            const floating = maximized_from_tiled ? this.float_stack(ext, stack, focused, rect) : stack;
+            if (!floating) return true;
+
+            floating.maximized_by_toggle = true;
+            floating.maximized_from_tiled = maximized_from_tiled;
+            floating.saved_rect = focused.rect().clone();
+            floating.update_positions(rect);
+
+            if (!maximized_from_tiled) focused.move(ext, rect);
         }
 
         this.refresh_stacks_after_mode_change(ext, focused);

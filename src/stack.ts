@@ -113,6 +113,9 @@ export class Stack {
 
     private rect: Rectangular = { width: 0, height: 0, x: 0, y: 0 };
 
+    /** Ignore a newly opened tab's initial geometry until it adopts this stack's geometry. */
+    private floating_position_pending: boolean = false;
+
     private restacker: SignalID | null = global.display.connect('restacked', () => this.restack());
 
     private tabs_destroy: SignalID | null;
@@ -184,8 +187,12 @@ export class Stack {
         const win = this.ext.windows.get(entity);
         if (!win) return;
 
-        if (this.floating && this.rect.width > 0 && this.rect.height > 0) {
-            win.move(this.ext, this.rect);
+        if (this.floating && this.rect.width > 0 && this.rect.height > 0 && win.actor_exists()) {
+            this.floating_position_pending = true;
+            win.move(this.ext, this.rect, () => {
+                this.floating_position_pending = false;
+                this.refresh();
+            });
         }
 
         if (!Ecs.entity_eq(entity, this.active)) {
@@ -592,6 +599,15 @@ export class Stack {
             return;
         }
 
+        // A newly opened floating tab reports its initial (application-chosen)
+        // geometry before our queued move applies the stack geometry. Do not
+        // let that transient size replace the stack's shared rectangle.
+        if (this.floating && this.floating_position_pending) {
+            this.restack();
+            this.window_changed();
+            return;
+        }
+
         // Both floating and tiled stacks can move independently of a layout
         // recalculation (for example, while switching between the two modes).
         this.update_positions(window.rect());
@@ -624,6 +640,17 @@ export class Stack {
         this.widgets.tabs.y = rect.y - this.tabs_height;
         this.widgets.tabs.height = this.tabs_height;
         this.widgets.tabs.width = rect.width;
+
+        // A floating stack has no tiling-forest pass to resize its hidden
+        // tabs. Keep every tab at the shared stack geometry now, rather than
+        // waiting until each one is focused.
+        if (this.floating) {
+            for (const tab of this.tabs) {
+                if (Ecs.entity_eq(tab.entity, this.active)) continue;
+                const window = this.ext.windows.get(tab.entity);
+                if (window?.actor_exists()) window.move(this.ext, rect);
+            }
+        }
     }
 
     private watch_signals(comp: number, button: number, window: ShellWindow) {
