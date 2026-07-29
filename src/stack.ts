@@ -247,6 +247,8 @@ export class Stack {
             this.on_grab(() => {
                 const window = this.ext.windows.get(this.active);
                 if (window) {
+                    // Floating stacks are not repositioned by the tiling forest
+                    if (this.floating) this.update_positions(window.rect());
                     this.window_changed();
                 } else {
                     this.active_disconnect();
