@@ -113,8 +113,11 @@ export class Stack {
 
     private rect: Rectangular = { width: 0, height: 0, x: 0, y: 0 };
 
-    /** Ignore a newly opened tab's initial geometry until it adopts this stack's geometry. */
+    /** Ignore geometry changes while a stack correction is in flight. */
     private floating_position_pending: boolean = false;
+
+    /** Application-requested geometries rejected for the current floating stack geometry. */
+    private rejected_floating_rects: Set<string> = new Set();
 
     private restacker: SignalID | null = global.display.connect('restacked', () => this.restack());
 
@@ -191,7 +194,8 @@ export class Stack {
             this.floating_position_pending = true;
             win.move(this.ext, this.rect, () => {
                 this.floating_position_pending = false;
-                this.refresh();
+                this.restack();
+                this.window_changed();
             });
         }
 
@@ -599,18 +603,41 @@ export class Stack {
             return;
         }
 
-        // A newly opened floating tab reports its initial (application-chosen)
-        // geometry before our queued move applies the stack geometry. Do not
-        // let that transient size replace the stack's shared rectangle.
-        if (this.floating && this.floating_position_pending) {
-            this.restack();
-            this.window_changed();
-            return;
+        if (this.floating) {
+            // Applications may configure themselves after receiving focus.
+            // The stack, rather than an individual tab, owns floating geometry.
+            const rect = window.rect();
+            if (window.grab) {
+                this.update_positions(rect);
+            } else if (rect.eq(this.rect)) {
+                this.rejected_floating_rects.clear();
+            } else if (this.floating_position_pending) {
+                this.restack();
+                this.window_changed();
+                return;
+            } else if (this.rect.width > 0 && this.rect.height > 0) {
+                const key = `${rect.x}:${rect.y}:${rect.width}:${rect.height}`;
+
+                // A client can reject move_resize_frame() and immediately
+                // re-emit the request. Limit corrections until it accepts the
+                // shared geometry so an uncooperative client cannot spin GNOME
+                // Shell forever.
+                if (this.rejected_floating_rects.size < 8 && !this.rejected_floating_rects.has(key)) {
+                    this.rejected_floating_rects.add(key);
+                    this.floating_position_pending = true;
+                    this.force_floating_positions(() => {
+                        this.floating_position_pending = false;
+                        this.restack();
+                        this.window_changed();
+                    });
+                }
+            }
+        } else {
+            // Tiled stacks can move independently of a layout recalculation
+            // (for example, while switching between the two modes).
+            this.update_positions(window.rect());
         }
 
-        // Both floating and tiled stacks can move independently of a layout
-        // recalculation (for example, while switching between the two modes).
-        this.update_positions(window.rect());
         this.restack();
         this.window_changed();
     }
@@ -633,6 +660,7 @@ export class Stack {
         if (!this.widgets || rect.width <= 0 || rect.height <= 0) return;
 
         this.rect = rect;
+        this.rejected_floating_rects.clear();
 
         this.tabs_height = TAB_HEIGHT * this.ext.dpi;
 
@@ -643,12 +671,20 @@ export class Stack {
 
         // A floating stack has no tiling-forest pass to resize its hidden
         // tabs. Keep every tab at the shared stack geometry now, rather than
-        // waiting until each one is focused.
-        if (this.floating) {
-            for (const tab of this.tabs) {
-                if (Ecs.entity_eq(tab.entity, this.active)) continue;
-                const window = this.ext.windows.get(tab.entity);
-                if (window?.actor_exists()) window.move(this.ext, rect);
+        // waiting until each one is focused. The active tab is moved by the
+        // caller so its completion callback is not replaced.
+        if (this.floating) this.force_floating_positions(undefined, false);
+    }
+
+    /** Forces floating tabs to the shared stack geometry. */
+    private force_floating_positions(on_active_complete?: () => void, include_active: boolean = true) {
+        for (const tab of this.tabs) {
+            const active = Ecs.entity_eq(tab.entity, this.active);
+            if (!include_active && active) continue;
+
+            const window = this.ext.windows.get(tab.entity);
+            if (window?.actor_exists() && !window.rect().eq(this.rect)) {
+                window.move(this.ext, this.rect, active ? on_active_complete : undefined);
             }
         }
     }

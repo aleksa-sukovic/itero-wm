@@ -793,6 +793,9 @@ export class Tiler {
                         target = ext.center_rect_on_monitor(meta.meta.get_monitor(), target);
                     }
 
+                    const stack = meta.stack === null ? null : ext.auto_tiler?.forest.stacks.get(meta.stack);
+                    if (stack?.floating) stack.update_positions(target);
+
                     meta.move(ext, target, () => {
                         ext.size_signals_unblock(meta);
                         ext.add_tag(meta_entity, Tags.Tiled);
