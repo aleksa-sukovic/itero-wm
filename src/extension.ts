@@ -790,6 +790,20 @@ export class Ext extends Ecs.System<ExtEvent> {
         return centered;
     }
 
+    /** Reapply the configured floating geometry after client startup requests settle. */
+    private center_new_floating(win: Window.ShellWindow) {
+        this.center_floating(win);
+
+        for (const delay of [250, 1000, 2000]) {
+            GLib.timeout_add(GLib.PRIORITY_LOW, delay, () => {
+                if (win.actor_exists() && !win.meta.minimized && win.stack === null && this.is_floating(win)) {
+                    this.center_floating(win);
+                }
+                return false;
+            });
+        }
+    }
+
     private manage_new_window(win: Window.ShellWindow): boolean {
         const tiler = this.auto_tiler;
         if (!tiler || win.meta.minimized || !win.is_tilable(this)) return false;
@@ -797,7 +811,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         const mode = this.settings.default_window_mode();
         if (mode === 'float') {
             this.add_tag(win.entity, Tags.Floating);
-            this.center_floating(win);
+            this.center_new_floating(win);
             return true;
         }
 
