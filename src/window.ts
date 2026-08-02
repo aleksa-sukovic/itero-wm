@@ -313,6 +313,15 @@ export class ShellWindow {
         return this.meta.maximized_vertically && !this.meta.maximized_horizontally;
     }
 
+    has_floating_exception(ext: Ext): boolean {
+        let wm_class = this.meta.get_wm_class();
+        if (wm_class !== null && wm_class.trim().length === 0) {
+            wm_class = this.name(ext);
+        }
+
+        return wm_class !== null && ext.conf.window_shall_float(wm_class, this.title());
+    }
+
     is_tilable(ext: Ext): boolean {
         let tile_checks = () => {
             let wm_class = this.meta.get_wm_class();
@@ -338,7 +347,7 @@ export class ShellWindow {
 
             // Blacklist any windows that happen to leak through our filter
             // Windows that are tagged ForceTile are considered tilable despite exemption
-            if (wm_class !== null && ext.conf.window_shall_float(wm_class, this.title())) {
+            if (this.has_floating_exception(ext)) {
                 return ext.contains_tag(this.entity, Tags.ForceTile);
             }
 

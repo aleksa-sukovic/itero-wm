@@ -158,7 +158,8 @@ export class RoundedCorners {
             frame.y - buffer.y + actor.height + frame.height - buffer.height,
         ];
         const radius = Math.min(this.ext.settings.corner_radius(), (bounds[2] - bounds[0]) / 2, (bounds[3] - bounds[1]) / 2);
-        const corner_radii = window.stack === null ? [radius, radius, radius, radius] : [0, 0, radius, radius];
+        const stacked = window.stack !== null && !window.has_floating_exception(this.ext);
+        const corner_radii = stacked ? [0, 0, radius, radius] : [radius, radius, radius, radius];
 
         effect.update(bounds, corner_radii);
     }
