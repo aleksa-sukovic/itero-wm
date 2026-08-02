@@ -170,7 +170,7 @@ export class ShellWindow {
             if (this.border) {
                 if (key === 'hint-color-rgba') {
                     this.update_hint_colors();
-                } else if (key === 'active-hint-border-radius') {
+                } else if (key === 'corner-radius') {
                     this.update_border_style();
                 }
             }
@@ -536,6 +536,8 @@ export class ShellWindow {
     }
 
     update_border_layout() {
+        this.ext.rounding.refresh(this);
+
         let { x, y, width, height } = this.meta.get_frame_rect();
 
         const border = this.border;
@@ -596,7 +598,7 @@ export class ShellWindow {
     update_border_style() {
         const { settings } = this.ext;
         const color_value = settings.hint_color_rgba();
-        const radius_value = settings.active_hint_border_radius() + this.border_size;
+        const radius_value = settings.corner_radius() + this.border_size;
         if (this.border) {
             this.border.set_style(`border-color: ${color_value}; border-radius: ${radius_value}px;`);
         }

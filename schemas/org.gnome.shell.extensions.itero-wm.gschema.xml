@@ -7,10 +7,10 @@
             <summary>Show a hint around the active window</summary>
         </key>
 
-        <key type="u" name="active-hint-border-radius">
-            <default>5</default>
+        <key type="u" name="corner-radius">
+            <default>8</default>
             <range min="0" max="30"/>
-            <summary>Border radius for active window hint, in pixels</summary>
+            <summary>Base window corner radius, in pixels</summary>
         </key>
 
         <key type="u" name="gap-inner">

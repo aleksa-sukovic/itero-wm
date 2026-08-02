@@ -13,7 +13,7 @@ import St from 'gi://St';
 const ACTIVE_TAB = 'itero-wm-tab itero-wm-tab-active';
 const INACTIVE_TAB = 'itero-wm-tab itero-wm-tab-inactive';
 const URGENT_TAB = 'itero-wm-tab itero-wm-tab-urgent';
-const TAB_COLOR_SETTINGS = ['hint-color-rgba', 'inactive-tab-color-rgba', 'active-tab-foreground-rgba', 'inactive-tab-foreground-rgba'];
+const TAB_STYLE_SETTINGS = ['corner-radius', 'hint-color-rgba', 'inactive-tab-color-rgba', 'active-tab-foreground-rgba', 'inactive-tab-foreground-rgba'];
 
 export var TAB_HEIGHT: number = 24;
 
@@ -190,6 +190,8 @@ export class Stack {
         const win = this.ext.windows.get(entity);
         if (!win) return;
 
+        win.update_border_layout();
+
         if (this.floating && this.rect.width > 0 && this.rect.height > 0 && win.actor_exists()) {
             this.floating_position_pending = true;
             win.move(this.ext, this.rect, () => {
@@ -235,7 +237,7 @@ export class Stack {
     private get_tab_border_radius(idx: number): string {
         let result = `0px 0px 0px 0px`;
 
-        let radius = this.ext.settings.active_hint_border_radius();
+        let radius = this.ext.settings.corner_radius();
         // only allow a radius up to half the tab_height
         radius = Math.min(radius, Math.trunc(this.tabs_height / 2));
         // set each corner's radius based on it's order
@@ -284,7 +286,7 @@ export class Stack {
         let button = this.buttons.get(tab.button);
         if (button) {
             let change_id = settings.ext.connect('changed', (_, key) => {
-                if (TAB_COLOR_SETTINGS.includes(key)) this.change_tab_color(tab);
+                if (TAB_STYLE_SETTINGS.includes(key)) this.change_tab_color(tab);
                 return false;
             });
             button.connect('destroy', () => {

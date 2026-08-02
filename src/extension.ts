@@ -9,6 +9,7 @@ import * as Keybindings from './keybindings.js';
 import * as Lib from './lib.js';
 import * as log from './log.js';
 import * as Rect from './rectangle.js';
+import * as Rounding from './rounding.js';
 import * as Settings from './settings.js';
 import * as Tiling from './tiling.js';
 import * as Window from './window.js';
@@ -88,6 +89,9 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     /** Manage interactions with GSettings */
     settings: Settings.ExtensionSettings = new Settings.ExtensionSettings();
+
+    /** Round managed window corners */
+    rounding: Rounding.RoundedCorners = new Rounding.RoundedCorners(this);
 
     // Widgets
 
@@ -1879,6 +1883,8 @@ export class Ext extends Ecs.System<ExtEvent> {
             actor.connect('destroy', destroy_window);
             this.window_signals.get_or(entity, () => new Array()).push(win.meta.connect('unmanaged', destroy_window));
 
+            this.rounding.refresh(win);
+
             if (win.is_tilable(this)) {
                 this.connect_window(win);
             } else if (this.auto_tiler && this.is_floating(win)) {
@@ -2166,6 +2172,9 @@ export class Ext extends Ecs.System<ExtEvent> {
             switch (key) {
                 case 'active-hint':
                     this.show_border_on_focused();
+                    break;
+                case 'corner-radius':
+                    this.rounding.refreshAll();
                     break;
                 case 'gap-inner':
                     this.on_gap_inner();
@@ -2964,6 +2973,7 @@ export default class IteroWMExtension extends Extension {
 
         ext.injections_add();
         ext.signals_attach();
+        ext.rounding.enable();
         ext.sync_top_bar_visibility();
 
         disable_window_attention_handler();
@@ -2986,6 +2996,7 @@ export default class IteroWMExtension extends Extension {
             delete globalThis.iteroWmExtension;
             ext.injections_remove();
             ext.signals_remove();
+            ext.rounding.disable();
             ext.exit_modes();
             ext.stop_launcher_services();
             ext.hide_all_borders();

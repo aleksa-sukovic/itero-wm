@@ -46,7 +46,7 @@ function settings_new_schema(schema: string): Settings {
 }
 
 const ACTIVE_HINT = 'active-hint';
-const ACTIVE_HINT_BORDER_RADIUS = 'active-hint-border-radius';
+const CORNER_RADIUS = 'corner-radius';
 const STACKING_WITH_MOUSE = 'stacking-with-mouse';
 const COLUMN_SIZE = 'column-size';
 const EDGE_TILING = 'edge-tiling';
@@ -84,8 +84,8 @@ export class ExtensionSettings {
         return this.ext.get_boolean(ACTIVE_HINT);
     }
 
-    active_hint_border_radius(): number {
-        return this.ext.get_uint(ACTIVE_HINT_BORDER_RADIUS);
+    corner_radius(): number {
+        return this.ext.get_uint(CORNER_RADIUS);
     }
 
     stacking_with_mouse(): boolean {
@@ -189,8 +189,8 @@ export class ExtensionSettings {
         this.ext.set_boolean(ACTIVE_HINT, set);
     }
 
-    set_active_hint_border_radius(set: number) {
-        this.ext.set_uint(ACTIVE_HINT_BORDER_RADIUS, set);
+    set_corner_radius(set: number) {
+        this.ext.set_uint(CORNER_RADIUS, set);
     }
 
     set_stacking_with_mouse(set: boolean) {

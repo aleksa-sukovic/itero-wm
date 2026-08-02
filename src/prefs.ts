@@ -19,7 +19,7 @@ interface AppWidgets {
     mouse_cursor_focus_position: any;
     log_level: any;
     active_hint: any;
-    active_hint_border_radius: any;
+    corner_radius: any;
     hint_color_rgba: any;
     floating_exceptions: any;
 }
@@ -97,11 +97,11 @@ function settings_dialog_new(): Gtk.Container {
         Settings.sync();
     });
 
-    app.active_hint_border_radius.set_text(String(ext.active_hint_border_radius()));
-    app.active_hint_border_radius.connect('activate', (widget: any) => {
+    app.corner_radius.set_text(String(ext.corner_radius()));
+    app.corner_radius.connect('activate', (widget: any) => {
         let parsed = parseInt((widget.get_text() as string).trim());
         if (!isNaN(parsed)) {
-            ext.set_active_hint_border_radius(parsed);
+            ext.set_corner_radius(parsed);
             Settings.sync();
         }
     });
@@ -165,8 +165,8 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
         margin_start: 24,
     });
 
-    const active_hint_border_radius_label = new Gtk.Label({
-        label: 'Active Border Radius',
+    const corner_radius_label = new Gtk.Label({
+        label: 'Corner Radius',
         xalign: 0.0,
         margin_start: 24,
     });
@@ -193,7 +193,7 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
         mouse_cursor_focus_position: build_combo(grid, 4, focus.FocusPosition, 'Mouse Cursor Focus Position', 24),
         log_level: build_combo(grid, 13, log.LOG_LEVELS, 'Log Level'),
         active_hint: new Gtk.Switch({ halign: Gtk.Align.END }),
-        active_hint_border_radius: number_entry(),
+        corner_radius: number_entry(),
         hint_color_rgba: new Gtk.ColorButton({ use_alpha: true }),
         floating_exceptions: new Gtk.Button({ label: 'Open' }),
     };
@@ -214,8 +214,8 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
     grid.attach(active_hint_label, 0, 9, 1, 1);
     grid.attach(settings.active_hint, 1, 9, 1, 1);
 
-    grid.attach(active_hint_border_radius_label, 0, 10, 1, 1);
-    grid.attach(settings.active_hint_border_radius, 1, 10, 1, 1);
+    grid.attach(corner_radius_label, 0, 10, 1, 1);
+    grid.attach(settings.corner_radius, 1, 10, 1, 1);
 
     grid.attach(hint_color_rgba_label, 0, 11, 1, 1);
     grid.attach(settings.hint_color_rgba, 1, 11, 1, 1);
