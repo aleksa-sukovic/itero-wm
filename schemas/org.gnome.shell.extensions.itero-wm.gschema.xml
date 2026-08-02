@@ -92,6 +92,11 @@
             <summary>Toggle stacking mode inside management mode</summary>
         </key>
 
+        <key type="as" name="cycle-window-mode-global">
+            <default><![CDATA[['<Shift><Super>g']]]></default>
+            <summary>Cycle the default mode for newly opened windows</summary>
+        </key>
+
         <key type="as" name="toggle-stacking-global">
             <default><![CDATA[['<Super>s']]]></default>
             <summary>Toggle stacking mode outside management mode</summary>
@@ -148,6 +153,11 @@
             <summary>Toggles auto-tiling on and off</summary>
         </key>
 
+
+        <key type="s" name="default-window-mode">
+            <default>'tile'</default>
+            <summary>Default mode for newly opened windows: tile, float, or stack</summary>
+        </key>
 
         <key type="as" name="tile-move-left">
             <default><![CDATA[['Left','KP_Left','h']]]></default>

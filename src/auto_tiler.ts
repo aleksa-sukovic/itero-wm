@@ -686,30 +686,25 @@ export class AutoTiler {
 
         if (focused.stack !== null) {
             const stack = this.forest.stacks.get(focused.stack);
-            if (stack) {
-                if (stack.tabs.length === 1) {
-                    if (stack.floating) {
-                        stack.destroy();
-                        this.forest.stacks.remove(focused.stack);
-                        focused.stack = null;
-                        focused.update_border_layout();
-                        focused.show_border();
-                        ext.show_stacking_osd(false);
-                    } else {
-                        const fork_entity = this.attached.get(focused.entity);
-                        const fork = fork_entity ? this.forest.forks.get(fork_entity) : null;
-                        if (fork) {
-                            this.unstack(ext, fork, focused, true);
-                            ext.show_stacking_osd(false);
-                        }
-                    }
-                    return;
-                }
+            if (!stack) return;
 
-                stack.accepts_new_windows = !stack.accepts_new_windows;
-                ext.show_stacking_osd(stack.accepts_new_windows);
+            if (stack.tabs.length > 1) {
+                this.unstack_active(ext);
                 return;
             }
+
+            if (stack.floating) {
+                stack.destroy();
+                this.forest.stacks.remove(focused.stack);
+                focused.stack = null;
+                focused.update_border_layout();
+                focused.show_border();
+            } else {
+                const fork_entity = this.attached.get(focused.entity);
+                const fork = fork_entity ? this.forest.forks.get(fork_entity) : null;
+                if (fork) this.unstack(ext, fork, focused, true);
+            }
+            return;
         }
 
         if (ext.is_floating(focused)) {
@@ -721,7 +716,6 @@ export class AutoTiler {
             stack.activate(focused.entity);
             focused.update_border_layout();
             focused.show_border();
-            ext.show_stacking_osd(true);
             return;
         }
 
@@ -729,10 +723,7 @@ export class AutoTiler {
 
         if (fork_entity) {
             const fork = this.forest.forks.get(fork_entity);
-            if (fork) {
-                this.unstack(ext, fork, focused, true);
-                ext.show_stacking_osd(true);
-            }
+            if (fork) this.unstack(ext, fork, focused, true);
         }
     }
 

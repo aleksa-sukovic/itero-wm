@@ -424,10 +424,34 @@ export class Ext extends Ecs.System<ExtEvent> {
         return display.get_current_monitor();
     }
 
-    show_stacking_osd(enabled: boolean) {
+    cycle_window_mode() {
+        const focused = this.focus_window();
+        const stack = focused && focused.stack !== null ? (this.auto_tiler?.forest.stacks.get(focused.stack) ?? null) : null;
+        const modes: Array<Settings.WindowMode> = stack ? ['stack', 'float', 'tile'] : ['float', 'tile'];
+        const current = this.settings.default_window_mode();
+        const next = modes[(modes.indexOf(current) + 1) % modes.length];
+
+        this.settings.set_default_window_mode(next);
+        if (next === 'stack' && stack) stack.accepts_new_windows = true;
+
         const icon = new Gio.ThemedIcon({ name: 'view-grid-symbolic' });
-        const label = enabled ? 'Stacking enabled' : 'Regular window management';
-        Main.osdWindowManager.showOne(this.active_monitor(), icon, label, null, null);
+        Main.osdWindowManager.showOne(this.active_monitor(), icon, `${next[0].toUpperCase()}${next.slice(1)} Mode`, null, null);
+    }
+
+    toggle_stacking() {
+        const focused = this.focus_window();
+        if (!focused || !this.auto_tiler) return;
+
+        const stack = focused.stack === null ? null : (this.auto_tiler.forest.stacks.get(focused.stack) ?? null);
+        const previous_mode: Settings.WindowMode = stack?.floating ? 'float' : 'tile';
+
+        this.auto_tiler.toggle_stacking(this, focused);
+
+        if (!stack && focused.stack !== null) {
+            this.settings.set_default_window_mode('stack');
+        } else if (stack && focused.stack === null) {
+            this.settings.set_default_window_mode(previous_mode);
+        }
     }
 
     active_window_list(): Array<Window.ShellWindow> {
@@ -764,6 +788,32 @@ export class Ext extends Ecs.System<ExtEvent> {
 
         win.move(this, centered);
         return centered;
+    }
+
+    private manage_new_window(win: Window.ShellWindow): boolean {
+        const tiler = this.auto_tiler;
+        if (!tiler || win.meta.minimized || !win.is_tilable(this)) return false;
+
+        const mode = this.settings.default_window_mode();
+        if (mode === 'float') {
+            this.add_tag(win.entity, Tags.Floating);
+            this.center_floating(win);
+            return true;
+        }
+
+        if (mode === 'stack') {
+            const floating_stack = this.floating_stack_for(win);
+            if (floating_stack && this.attach_to_floating_stack(floating_stack[0], floating_stack[1], win)) {
+                return true;
+            }
+
+            tiler.auto_tile(this, win, this.init);
+            tiler.create_stack(this, win);
+            return true;
+        }
+
+        tiler.auto_tile(this, win, this.init);
+        return true;
     }
 
     monitor_area(monitor: number): Rectangle | null {
@@ -2809,19 +2859,9 @@ export class Ext extends Ecs.System<ExtEvent> {
                 });
             };
 
-            const floating_stack = this.floating_stack_for(win);
-            if (floating_stack) {
+            if (this.auto_tiler && !win.meta.minimized && win.is_tilable(this)) {
                 let id = actor.connect('first-frame', () => {
-                    if (!this.attach_to_floating_stack(floating_stack[0], floating_stack[1], win) && this.auto_tiler && !win.meta.minimized && win.is_tilable(this)) {
-                        this.auto_tiler.auto_tile(this, win, this.init);
-                    }
-
-                    grab_focus();
-                    actor.disconnect(id);
-                });
-            } else if (this.auto_tiler && !win.meta.minimized && win.is_tilable(this)) {
-                let id = actor.connect('first-frame', () => {
-                    this.auto_tiler?.auto_tile(this, win, this.init);
+                    this.manage_new_window(win);
                     grab_focus();
                     actor.disconnect(id);
                 });

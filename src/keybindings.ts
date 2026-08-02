@@ -226,6 +226,7 @@ export class Keybindings {
         this.global = {
             'activate-launcher': () => ext.window_search.open(ext),
             'tile-enter': () => ext.tiler.enter(ext),
+            'cycle-window-mode-global': () => ext.cycle_window_mode(),
             'refresh-tiling': () => ext.refresh_tiling(),
             'toggle-top-bar': () => ext.toggle_top_bar(),
             'warp-mouse-left': () => ext.warp_mouse_to_monitor(Meta.DisplayDirection.LEFT),
@@ -255,7 +256,7 @@ export class Keybindings {
 
             'toggle-tiling': () => ext.toggle_tiling(),
 
-            'toggle-stacking-global': () => ext.auto_tiler?.toggle_stacking(ext),
+            'toggle-stacking-global': () => ext.toggle_stacking(),
 
             'unstack-active-global': () => ext.auto_tiler?.unstack_active(ext),
 

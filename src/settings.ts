@@ -68,6 +68,9 @@ const MOUSE_CURSOR_FOLLOWS_ACTIVE_WINDOW = 'mouse-cursor-follows-active-window';
 const MOUSE_CURSOR_FOCUS_LOCATION = 'mouse-cursor-focus-location';
 const FLOAT_DEFAULT_WIDTH_PERCENTAGE = 'float-default-width-percentage';
 const FLOAT_DEFAULT_HEIGHT_PERCENTAGE = 'float-default-height-percentage';
+const DEFAULT_WINDOW_MODE = 'default-window-mode';
+
+export type WindowMode = 'float' | 'stack' | 'tile';
 
 export class ExtensionSettings {
     ext: Settings = settings_new_schema('org.gnome.shell.extensions.itero-wm');
@@ -175,6 +178,11 @@ export class ExtensionSettings {
         return this.ext.get_uint(FLOAT_DEFAULT_HEIGHT_PERCENTAGE);
     }
 
+    default_window_mode(): WindowMode {
+        const mode = this.ext.get_string(DEFAULT_WINDOW_MODE);
+        return mode === 'float' || mode === 'stack' || mode === 'tile' ? mode : 'tile';
+    }
+
     // Setters
 
     set_active_hint(set: boolean) {
@@ -245,5 +253,9 @@ export class ExtensionSettings {
 
     set_float_default_height_percentage(set: number) {
         this.ext.set_uint(FLOAT_DEFAULT_HEIGHT_PERCENTAGE, set);
+    }
+
+    set_default_window_mode(mode: WindowMode) {
+        this.ext.set_string(DEFAULT_WINDOW_MODE, mode);
     }
 }

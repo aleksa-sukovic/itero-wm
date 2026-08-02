@@ -15,6 +15,7 @@ Itero WM remains open source under the same license terms as the upstream projec
 - `Super+f` maximizes the focused window while respecting outer gaps.
 - `active_border_exclusions` suppresses the active hint border for matching window rules in `config.json`.
 - `Super+Shift+m` toggles the GNOME top bar.
+- `Super+Shift+g` cycles the new-window mode, while `Super+Shift+s` stacks or unstacks the focused window.
 - `make reload-extension` reloads the extension on Wayland without logging out.
 
 ## GNOME integration
