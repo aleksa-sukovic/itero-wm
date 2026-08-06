@@ -125,6 +125,11 @@ export class RoundedCorners {
         const actor = window.meta.get_compositor_private() as any;
         if (!actor) return;
 
+        if (window.has_floating_exception(this.ext)) {
+            this.remove(window);
+            return;
+        }
+
         if (window.meta.is_fullscreen() || window.is_maximized()) {
             this.remove(window);
             return;
@@ -158,8 +163,7 @@ export class RoundedCorners {
             frame.y - buffer.y + actor.height + frame.height - buffer.height,
         ];
         const radius = Math.min(this.ext.settings.corner_radius(), (bounds[2] - bounds[0]) / 2, (bounds[3] - bounds[1]) / 2);
-        const stacked = window.stack !== null && !window.has_floating_exception(this.ext);
-        const corner_radii = stacked ? [0, 0, radius, radius] : [radius, radius, radius, radius];
+        const corner_radii = window.stack !== null ? [0, 0, radius, radius] : [radius, radius, radius, radius];
 
         effect.update(bounds, corner_radii);
     }

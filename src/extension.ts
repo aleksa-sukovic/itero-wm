@@ -825,8 +825,9 @@ export class Ext extends Ecs.System<ExtEvent> {
                 return true;
             }
 
-            tiler.auto_tile(this, win, this.init);
-            tiler.create_stack(this, win);
+            // Stack mode only adds windows to an existing local stack
+            this.add_tag(win.entity, Tags.Floating);
+            this.center_new_floating(win);
             return true;
         }
 
@@ -961,6 +962,12 @@ export class Ext extends Ecs.System<ExtEvent> {
 
         this.movements.remove(win);
         this.windows.remove(win);
+
+        // Do not leave new windows in stack mode after the final stack is closed
+        if (this.windows.is_empty() && this.settings.default_window_mode() === 'stack') {
+            this.settings.set_default_window_mode(floating_stack ? 'float' : 'tile');
+        }
+
         this.delete_entity(win);
     }
 
@@ -1312,10 +1319,15 @@ export class Ext extends Ecs.System<ExtEvent> {
 
         const previous_window = this.windows.get(previous);
         if (!previous_window || !this.is_floating(previous_window) || previous_window.stack === null) return null;
-        if (previous_window.workspace_id() !== win.workspace_id()) return null;
+        if (previous_window.workspace_id() !== win.workspace_id() || previous_window.meta.get_monitor() !== win.meta.get_monitor()) return null;
 
         const floating_stack = this.auto_tiler.forest.stacks.get(previous_window.stack);
-        return floating_stack?.floating && floating_stack.accepts_new_windows ? [floating_stack, previous_window.stack] : null;
+        return floating_stack?.floating &&
+            floating_stack.accepts_new_windows &&
+            floating_stack.workspace === win.workspace_id() &&
+            floating_stack.monitor === win.meta.get_monitor()
+            ? [floating_stack, previous_window.stack]
+            : null;
     }
 
     private attach_to_floating_stack(floating_stack: stack.Stack, stack_id: number, win: Window.ShellWindow): boolean {
