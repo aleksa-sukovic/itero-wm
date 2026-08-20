@@ -44,6 +44,11 @@ Tasks for a tester to verify when approving a patch. Use complex window layouts 
 - [ ] Turn on auto-tiling. Windows automatically tile.
 - [ ] Disabling and enabling auto-tiling correctly handles minimized, maximized, fullscreen, floating, and non-floating windows (This test needs a better definition, steps, or to be separated out.)
 
+### New Window Modes
+
+- [ ] Windows opened before Itero WM finishes initializing use the configured default mode.
+- [ ] Stacking or unstacking the focused window does not change the configured default mode.
+
 ### Stacking
 
 - [ ] Windows can be moved into a stack.

@@ -446,16 +446,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         const focused = this.focus_window();
         if (!focused || !this.auto_tiler) return;
 
-        const stack = focused.stack === null ? null : (this.auto_tiler.forest.stacks.get(focused.stack) ?? null);
-        const previous_mode: Settings.WindowMode = stack?.floating ? 'float' : 'tile';
-
         this.auto_tiler.toggle_stacking(this, focused);
-
-        if (!stack && focused.stack !== null) {
-            this.settings.set_default_window_mode('stack');
-        } else if (stack && focused.stack === null) {
-            this.settings.set_default_window_mode(previous_mode);
-        }
     }
 
     active_window_list(): Array<Window.ShellWindow> {
@@ -808,10 +799,12 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
     }
 
-    private manage_new_window(win: Window.ShellWindow): boolean {
+    manage_new_window(win: Window.ShellWindow): boolean {
         const tiler = this.auto_tiler;
         if (!tiler || win.meta.minimized || !win.is_tilable(this)) return false;
+        if (win.new_window_managed) return true;
 
+        win.new_window_managed = true;
         const mode = this.settings.default_window_mode();
         if (mode === 'float') {
             this.add_tag(win.entity, Tags.Floating);
@@ -962,11 +955,6 @@ export class Ext extends Ecs.System<ExtEvent> {
 
         this.movements.remove(win);
         this.windows.remove(win);
-
-        // Do not leave new windows in stack mode after the final stack is closed
-        if (this.windows.is_empty() && this.settings.default_window_mode() === 'stack') {
-            this.settings.set_default_window_mode(floating_stack ? 'float' : 'tile');
-        }
 
         this.delete_entity(win);
     }
@@ -2895,11 +2883,15 @@ export class Ext extends Ecs.System<ExtEvent> {
             };
 
             if (this.auto_tiler && !win.meta.minimized && win.is_tilable(this)) {
-                let id = actor.connect('first-frame', () => {
+                if (this.init) {
                     this.manage_new_window(win);
-                    grab_focus();
-                    actor.disconnect(id);
-                });
+                } else {
+                    let id = actor.connect('first-frame', () => {
+                        this.manage_new_window(win);
+                        grab_focus();
+                        actor.disconnect(id);
+                    });
+                }
             } else {
                 grab_focus();
             }

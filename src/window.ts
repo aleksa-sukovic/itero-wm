@@ -48,6 +48,7 @@ export class ShellWindow {
     ignore_detach: boolean = false;
     was_attached_to?: [Entity, boolean | number];
     destroying: boolean = false;
+    new_window_managed: boolean = false;
 
     // Awaiting reassignment after a display update
     reassignment: boolean = false;
@@ -616,8 +617,8 @@ export class ShellWindow {
     private wm_class_changed() {
         if (this.is_tilable(this.ext)) {
             this.ext.connect_window(this);
-            if (!this.meta.minimized) {
-                this.ext.auto_tiler?.auto_tile(this.ext, this, this.ext.init);
+            if (!this.meta.minimized && !this.new_window_managed) {
+                this.ext.manage_new_window(this);
             }
         }
     }
