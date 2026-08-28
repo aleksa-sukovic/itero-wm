@@ -47,6 +47,9 @@ Tasks for a tester to verify when approving a patch. Use complex window layouts 
 ### New Window Modes
 
 - [ ] Windows opened before Itero WM finishes initializing use the configured default mode.
+- [ ] Windows opened from an active stack join that stack by default.
+- [ ] `Super` `Shift` `G` changes the new-window mode only for the active stack.
+- [ ] Windows opened on an empty workspace or monitor use the configured default mode.
 - [ ] Stacking or unstacking the focused window does not change the configured default mode.
 
 ### Stacking

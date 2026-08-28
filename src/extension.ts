@@ -432,11 +432,15 @@ export class Ext extends Ecs.System<ExtEvent> {
         const focused = this.focus_window();
         const stack = focused && focused.stack !== null ? (this.auto_tiler?.forest.stacks.get(focused.stack) ?? null) : null;
         const modes: Array<Settings.WindowMode> = stack ? ['stack', 'float', 'tile'] : ['float', 'tile'];
-        const current = this.settings.default_window_mode();
+        const current = stack?.new_window_mode ?? this.settings.default_window_mode();
         const next = modes[(modes.indexOf(current) + 1) % modes.length];
 
-        this.settings.set_default_window_mode(next);
-        if (next === 'stack' && stack) stack.accepts_new_windows = true;
+        if (stack) {
+            stack.new_window_mode = next;
+            stack.accepts_new_windows = next === 'stack';
+        } else {
+            this.settings.set_default_window_mode(next);
+        }
 
         const icon = new Gio.ThemedIcon({ name: 'view-grid-symbolic' });
         Main.osdWindowManager.showOne(this.active_monitor(), icon, `${next[0].toUpperCase()}${next.slice(1)} Mode`, null, null);
@@ -805,7 +809,18 @@ export class Ext extends Ecs.System<ExtEvent> {
         if (win.new_window_managed) return true;
 
         win.new_window_managed = true;
-        const mode = this.settings.default_window_mode();
+        const active_stack = this.stack_for(win);
+        const mode = active_stack?.[0].new_window_mode ?? this.settings.default_window_mode();
+        if (mode === 'stack' && active_stack) {
+            const [stack, stack_id] = active_stack;
+            if (stack.floating && this.attach_to_floating_stack(stack, stack_id, win)) {
+                return true;
+            }
+
+            tiler.auto_tile(this, win, this.init);
+            return true;
+        }
+
         if (mode === 'float') {
             this.add_tag(win.entity, Tags.Floating);
             this.center_new_floating(win);
@@ -813,11 +828,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
 
         if (mode === 'stack') {
-            const floating_stack = this.floating_stack_for(win);
-            if (floating_stack && this.attach_to_floating_stack(floating_stack[0], floating_stack[1], win)) {
-                return true;
-            }
-
             // Stack mode only adds windows to an existing local stack
             this.add_tag(win.entity, Tags.Floating);
             this.center_new_floating(win);
@@ -1299,22 +1309,20 @@ export class Ext extends Ecs.System<ExtEvent> {
         return null;
     }
 
-    private floating_stack_for(win: Window.ShellWindow): [stack.Stack, number] | null {
+    /** Returns the active local stack for a newly opened window. */
+    private stack_for(win: Window.ShellWindow): [stack.Stack, number] | null {
         if (!win.is_tilable(this)) return null;
 
         const previous = this.previously_focused(win);
         if (!previous || !this.auto_tiler) return null;
 
         const previous_window = this.windows.get(previous);
-        if (!previous_window || !this.is_floating(previous_window) || previous_window.stack === null) return null;
+        if (!previous_window || previous_window.stack === null) return null;
         if (previous_window.workspace_id() !== win.workspace_id() || previous_window.meta.get_monitor() !== win.meta.get_monitor()) return null;
 
-        const floating_stack = this.auto_tiler.forest.stacks.get(previous_window.stack);
-        return floating_stack?.floating &&
-            floating_stack.accepts_new_windows &&
-            floating_stack.workspace === win.workspace_id() &&
-            floating_stack.monitor === win.meta.get_monitor()
-            ? [floating_stack, previous_window.stack]
+        const active_stack = this.auto_tiler.forest.stacks.get(previous_window.stack);
+        return active_stack && active_stack.workspace === win.workspace_id() && active_stack.monitor === win.meta.get_monitor()
+            ? [active_stack, previous_window.stack]
             : null;
     }
 

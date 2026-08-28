@@ -86,6 +86,9 @@ export class Stack {
     /** Whether this stack keeps its windows floating. */
     floating: boolean;
 
+    /** Mode used for windows opened while this stack is active. */
+    new_window_mode: 'stack' | 'float' | 'tile' = 'stack';
+
     /** Whether newly opened windows join this stack. */
     accepts_new_windows: boolean = true;
 
