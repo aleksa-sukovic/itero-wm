@@ -10,6 +10,7 @@ import * as Lib from './lib.js';
 import * as log from './log.js';
 import * as Rect from './rectangle.js';
 import * as Rounding from './rounding.js';
+import * as ShellRounding from './shell_rounding.js';
 import * as Settings from './settings.js';
 import * as Tiling from './tiling.js';
 import * as Window from './window.js';
@@ -92,6 +93,9 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     /** Round managed window corners */
     rounding: Rounding.RoundedCorners = new Rounding.RoundedCorners(this);
+
+    /** Round GNOME Shell surfaces */
+    shell_rounding: ShellRounding.ShellRounding = new ShellRounding.ShellRounding();
 
     // Widgets
 
@@ -233,7 +237,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.load_settings();
         this.reload_theme();
 
-        this.register_fn(() => load_theme(this.current_style));
+        this.register_fn(() => this.apply_theme());
 
         this.conf.reload();
 
@@ -1749,14 +1753,19 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
     }
 
+    apply_theme() {
+        load_theme(this.current_style);
+        this.shell_rounding.refresh(this.settings.corner_radius());
+    }
+
     on_gtk_shell_changed() {
         this.reload_theme();
-        load_theme(this.current_style);
+        this.apply_theme();
     }
 
     on_gtk_theme_change() {
         this.reload_theme();
-        load_theme(this.current_style);
+        this.apply_theme();
     }
 
     reload_theme() {
@@ -2183,6 +2192,7 @@ export class Ext extends Ecs.System<ExtEvent> {
                     break;
                 case 'corner-radius':
                     this.rounding.refreshAll();
+                    this.shell_rounding.refresh(this.settings.corner_radius());
                     break;
                 case 'gap-inner':
                     this.on_gap_inner();
@@ -2986,6 +2996,7 @@ export default class IteroWMExtension extends Extension {
         ext.injections_add();
         ext.signals_attach();
         ext.rounding.enable();
+        ext.shell_rounding.enable(ext.settings.corner_radius());
         ext.sync_top_bar_visibility();
 
         disable_window_attention_handler();
@@ -3005,10 +3016,10 @@ export default class IteroWMExtension extends Extension {
                 return;
             }
 
-            delete globalThis.iteroWmExtension;
             ext.injections_remove();
             ext.signals_remove();
             ext.rounding.disable();
+            ext.shell_rounding.disable();
             ext.exit_modes();
             ext.stop_launcher_services();
             ext.hide_all_borders();
@@ -3025,6 +3036,7 @@ export default class IteroWMExtension extends Extension {
         }
 
         enable_window_attention_handler();
+        delete globalThis.iteroWmExtension;
     }
 }
 
