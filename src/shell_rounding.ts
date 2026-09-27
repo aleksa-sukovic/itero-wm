@@ -39,6 +39,7 @@ const ROUNDED_SELECTORS = [
     '.calendar .calendar-day-heading',
     '.calendar .calendar-month-header .calendar-month-label',
     '.calendar .calendar-month-header .pager-button',
+    '.calendar .calendar-week-number',
     '.datemenu-today-button',
     '.events-button',
     '.events-button .event-box',
