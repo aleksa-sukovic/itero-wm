@@ -254,8 +254,6 @@ export class Keybindings {
 
             'toggle-floating': () => ext.auto_tiler?.toggle_floating(ext),
 
-            'toggle-tiling': () => ext.toggle_tiling(),
-
             'toggle-stacking-global': () => ext.toggle_stacking(),
 
             'unstack-active-global': () => ext.auto_tiler?.unstack_active(ext),

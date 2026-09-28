@@ -2461,14 +2461,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
     }
 
-    toggle_tiling() {
-        if (this.auto_tiler) {
-            this.auto_tile_off();
-        } else {
-            this.auto_tile_on();
-        }
-    }
-
     /// Reflows tiled windows onto the current monitor work areas, e.g. after the top bar is toggled.
     update_workareas() {
         GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {

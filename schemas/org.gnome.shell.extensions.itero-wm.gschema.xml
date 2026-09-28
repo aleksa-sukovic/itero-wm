@@ -148,12 +148,6 @@
         </key>
 
         <!-- Tiling Mode -->
-        <key type="as" name="toggle-tiling">
-            <default><![CDATA[['<Super>y']]]></default>
-            <summary>Toggles auto-tiling on and off</summary>
-        </key>
-
-
         <key type="s" name="default-window-mode">
             <default>'tile'</default>
             <summary>Default mode for newly opened windows: tile, float, or stack</summary>
