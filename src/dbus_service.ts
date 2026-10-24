@@ -6,11 +6,7 @@ const IFACE: string = `<node>
     <method name="FocusRight"/>
     <method name="FocusUp"/>
     <method name="FocusDown"/>
-    <method name="Launcher"/>
     <method name="WindowFocus">
-        <arg type="(uu)" direction="in" name="window"/>
-    </method>
-    <method name="WindowHighlight">
         <arg type="(uu)" direction="in" name="window"/>
     </method>
     <method name="WindowList">
@@ -24,13 +20,11 @@ const IFACE: string = `<node>
 
 export class Service {
     dbus: any;
-    id: any;
 
     FocusLeft: () => void = () => {};
     FocusRight: () => void = () => {};
     FocusUp: () => void = () => {};
     FocusDown: () => void = () => {};
-    Launcher: () => void = () => {};
     WindowFocus: (window: [number, number]) => void = () => {};
     WindowList: () => Array<[[number, number], string, string, string]> = () => [];
     WindowQuit: (window: [number, number]) => void = () => {};
@@ -46,10 +40,6 @@ export class Service {
 
         function onNameLost() {}
 
-        this.id = Gio.bus_own_name(Gio.BusType.SESSION, 'io.itero.IteroWM', Gio.BusNameOwnerFlags.NONE, onBusAcquired, onNameAcquired, onNameLost);
-    }
-
-    destroy() {
-        Gio.bus_unown_name(this.id);
+        Gio.bus_own_name(Gio.BusType.SESSION, 'io.itero.IteroWM', Gio.BusNameOwnerFlags.NONE, onBusAcquired, onNameAcquired, onNameLost);
     }
 }

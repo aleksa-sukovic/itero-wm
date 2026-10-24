@@ -80,12 +80,6 @@
             <summary>Focus right window</summary>
         </key>
 
-        <!-- Launcher -->
-        <key type="as" name="activate-launcher">
-            <default><![CDATA[['<Super>slash']]]></default>
-            <summary>Search key combo</summary>
-        </key>
-
         <!-- Window Management Keys -->
         <key type="as" name="toggle-stacking">
             <default><![CDATA[['s']]]></default>

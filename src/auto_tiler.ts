@@ -251,48 +251,6 @@ export class AutoTiler {
         });
     }
 
-    /** Swaps the location of two windows if the dropped window was dropped onto its sibling */
-    dropped_on_sibling(ext: Ext, win: Entity, swap: boolean = true): boolean {
-        const fork_entity = this.attached.get(win);
-
-        if (fork_entity) {
-            const cursor = lib.cursor_rect();
-            const fork = this.forest.forks.get(fork_entity);
-
-            if (fork) {
-                if (fork.left.inner.kind === 2 && fork.right && fork.right.inner.kind === 2) {
-                    if (fork.left.is_window(win)) {
-                        const sibling = ext.windows.get(fork.right.inner.entity);
-                        if (sibling && sibling.rect().contains(cursor)) {
-                            if (swap) {
-                                fork.left.inner.entity = fork.right.inner.entity;
-                                fork.right.inner.entity = win;
-
-                                this.tile(ext, fork, fork.area);
-                            }
-
-                            return true;
-                        }
-                    } else if (fork.right.is_window(win)) {
-                        const sibling = ext.windows.get(fork.left.inner.entity);
-                        if (sibling && sibling.rect().contains(cursor)) {
-                            if (swap) {
-                                fork.right.inner.entity = fork.left.inner.entity;
-                                fork.left.inner.entity = win;
-
-                                this.tile(ext, fork, fork.area);
-                            }
-
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     find_stack(entity: Entity): null | [Fork, node.Node, boolean] {
         const att = this.attached.get(entity);
         if (att) {

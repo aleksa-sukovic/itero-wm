@@ -16,7 +16,7 @@ Itero WM remains open source under the same license terms as the upstream projec
 - `active_border_exclusions` suppresses the active hint border for matching window rules in `config.json`.
 - `Super+Shift+m` toggles the GNOME top bar.
 - `Super+Shift+g` cycles the new-window mode, while `Super+Shift+s` stacks or unstacks the focused window.
-- `make reload-extension` reloads the extension on Wayland without logging out.
+- Uses Vicinae for application launching instead of the inherited Pop launcher.
 
 ## GNOME integration
 
@@ -32,8 +32,9 @@ To build and install the extension, run:
 ```bash
 make
 make install
-make reload-extension
 ```
+
+Log out and back in to load changed extension code. `make reload-extension` toggles the extension but does not reload cached JavaScript.
 
 To sync upstream changes:
 

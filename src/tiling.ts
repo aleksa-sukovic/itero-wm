@@ -798,7 +798,6 @@ export class Tiler {
 
                     meta.move(ext, target, () => {
                         ext.size_signals_unblock(meta);
-                        ext.add_tag(meta_entity, Tags.Tiled);
                     });
                 }
             }

@@ -31,7 +31,7 @@ wait
 
 # Convert JS to GJS-compatible scripts
 
-cp -r metadata.json icons schemas *.css _build &
+cp -r metadata.json schemas *.css _build &
 
 for src in $(find target -name '*.js'); do
     dest=$(echo "$src" | sed s#target#_build#g)

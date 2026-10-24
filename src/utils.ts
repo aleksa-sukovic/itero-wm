@@ -3,8 +3,6 @@ import * as error from './error.js';
 import * as log from './log.js';
 
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
-import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
 import { PACKAGE_VERSION } from 'resource:///org/gnome/shell/misc/config.js';
 const { Ok, Err } = result;
@@ -29,14 +27,6 @@ export function unmaximize(window: Meta.Window, flags: Meta.MaximizeFlags = Meta
     }
 }
 
-export function block_signal(object: GObject.Object, signal: SignalID) {
-    GObject.signal_handler_block(object, signal);
-}
-
-export function unblock_signal(object: GObject.Object, signal: SignalID) {
-    GObject.signal_handler_unblock(object, signal);
-}
-
 export function read_to_string(path: string): result.Result<string, error.Error> {
     const file = Gio.File.new_for_path(path);
     try {
@@ -49,10 +39,6 @@ export function read_to_string(path: string): result.Result<string, error.Error>
     } catch (e) {
         return Err(new Error(String(e)).context(`failed to load contents of ${path}`));
     }
-}
-
-export function source_remove(id: SignalID): boolean {
-    return GLib.source_remove(id) as any;
 }
 
 export function exists(path: string): boolean {
@@ -96,34 +82,6 @@ export function is_dark(color: string): boolean {
     });
     let L = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
     return L <= 0.179;
-}
-
-/** Utility function for running a process in the background and fetching its standard output as a string. */
-export function async_process(argv: Array<string>, input = null, cancellable: null | any = null): Promise<string> {
-    let flags = Gio.SubprocessFlags.STDOUT_PIPE;
-
-    if (input !== null) flags |= Gio.SubprocessFlags.STDIN_PIPE;
-
-    let proc = new Gio.Subprocess({ argv, flags });
-    proc.init(cancellable);
-
-    proc.wait_async(null, (source: any, res: any) => {
-        source.wait_finish(res);
-        if (cancellable !== null) {
-            cancellable.cancel();
-        }
-    });
-
-    return new Promise((resolve, reject) => {
-        proc.communicate_utf8_async(input, cancellable, (proc: any, res: any) => {
-            try {
-                let bytes = proc.communicate_utf8_finish(res)[1];
-                resolve(bytes.toString());
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
 }
 
 export type AsyncIPC = {
@@ -184,18 +142,4 @@ export function map_eq<K, V>(map1: Map<K, V>, map2: Map<K, V>) {
     }
 
     return true;
-}
-
-export function os_release(): null | string {
-    const [ok, bytes] = GLib.file_get_contents('/etc/os-release');
-    if (!ok) return null;
-
-    const contents: string = imports.byteArray.toString(bytes);
-    for (const line of contents.split('\n')) {
-        if (line.startsWith('VERSION_ID')) {
-            return line.split('"')[1];
-        }
-    }
-
-    return null;
 }

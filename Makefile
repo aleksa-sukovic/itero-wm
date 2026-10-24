@@ -8,12 +8,8 @@ endif
 
 ifeq ($(strip $(DESTDIR)),)
 INSTALLBASE = $(XDG_DATA_HOME)/gnome-shell/extensions
-PLUGIN_BASE = $(XDG_DATA_HOME)/itero-wm/launcher
-SCRIPTS_BASE = $(XDG_DATA_HOME)/itero-wm/scripts
 else
 INSTALLBASE = $(DESTDIR)/usr/share/gnome-shell/extensions
-PLUGIN_BASE = $(DESTDIR)/usr/lib/itero-wm/launcher
-SCRIPTS_BASE = $(DESTDIR)/usr/lib/itero-wm/scripts
 endif
 INSTALLNAME = $(UUID)
 
@@ -75,7 +71,7 @@ local-install: depcheck compile install configure restart-shell
 
 install:
 	rm -rf $(INSTALLBASE)/$(INSTALLNAME)
-	mkdir -p $(INSTALLBASE)/$(INSTALLNAME) $(PLUGIN_BASE) $(SCRIPTS_BASE)
+	mkdir -p $(INSTALLBASE)/$(INSTALLNAME)
 	cp -r _build/* $(INSTALLBASE)/$(INSTALLNAME)/
 
 uninstall:

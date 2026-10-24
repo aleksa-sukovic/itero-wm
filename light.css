@@ -16,27 +16,6 @@
     border-width: 3px;
 }
 
-.itero-wm-search-element:select {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    color: #393634;
-}
-
-.itero-wm-search-icon {
-    margin-right: 10px;
-}
-
-.itero-wm-search-cat {
-    margin-right: 10px;
-}
-
-.itero-wm-search-element {
-    padding-left: 10px;
-    padding-right: 2px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-
 .itero-wm-tab {
     border: none;
     color: #000;

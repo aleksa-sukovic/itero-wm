@@ -42,9 +42,6 @@ Tasks for a tester to verify when approving a patch. Use complex window layouts 
 - [ ] `Super` `G` floats and then re-tiles a window
 - [ ] Float a window with `Super` `G`. It should be movable and resizeable in window management mode with keyboard keys
 - [ ] `Super` `Q` Closes a window
-- [ ] Turn off auto-tiling. New windows launch floating.
-- [ ] Turn on auto-tiling. Windows automatically tile.
-- [ ] Disabling and enabling auto-tiling correctly handles minimized, maximized, fullscreen, floating, and non-floating windows (This test needs a better definition, steps, or to be separated out.)
 
 ### New Window Modes
 
@@ -89,28 +86,8 @@ Tasks for a tester to verify when approving a patch. Use complex window layouts 
 - [ ] Unplug a display - windows from the display retile on a new workspace on the remaining display
 - [ ] Plug an additional display into a laptop - windows and workspaces don't changes
 
-### Launcher
-
-- [ ] All windows on all workspaces appear on launch
-- [ ] Choosing an app on another workspace moves workspaces and focus to that app
-- [ ] Launching an application works
-- [ ] Typing text and then removing it will re-show those windows
-- [ ] Search works for applications and windows
-- [ ] Search works for GNOME settings panels
-- [ ] Search for "Extensions". There should be only one entry.
-- [ ] The overlay hint correctly highlights the selected window
-- [ ] Open windows are sorted above applications (e.g. "web browser")
-- [ ] t: executes a command in a terminal
-- [ ] : executes a command in sh
-- [ ] = calculates an equation
-- [ ] Search results are as expected:
-    - `cal` returns Calendar and Calculator before Color
-    - `pops` returns Popsicle first
-    - `shop` returns the Pop!\_Shop first
-
 ### Window Titles
 
-- [ ] Disabling window titles using global (Itero WM) option works for Shell Shortcuts, LibreOffice, etc.
 - [ ] Disabling window titles in Firefox works (Check debian and flatpak packages)
 
 ### Floating Exceptions
@@ -121,28 +98,3 @@ Tasks for a tester to verify when approving a patch. Use complex window layouts 
 - [ ] Close and re-open the window-- it should float when opened.
 - [ ] Add an app to floating exceptions-- it should float immediately.
 - [ ] Close and re-open the app-- it should float when opened.
-
-## With Tiling Disabled
-
-### Tiling
-
-- [ ] Super direction keys changes focus in the correct direction
-- [ ] Windows can be moved with the keyboard
-- [ ] Windows can be moved with the mouse
-- [ ] Windows swap with the keyboard (test with different size windows)
-- [ ] Windows can be resized with the keyboard
-- [ ] Windows can be resized with the mouse
-- [ ] Windows can be half-tiled left and right with `Ctrl``Super``left`/`right`
-
-### Displays
-
-- [ ] Windows move across displays in adjustment mode with directions keys
-- [ ] Windows move across displays with the mouse
-
-### Miscellaneous
-
-- [ ] Close all windows-- no icons should be active in the GNOME launcher.
-- [ ] Open a window, enable tiling, stack the window, move to a different workspace, and disable tiling. The window should not become visible on the empty workspace.
-- [ ] With tiling still disabled, minimize the single window. The active hint should go away.
-- [ ] Maximize a window, then open another app with the Activities overview. The newly-opened app should be visible and focused.
-- [ ] Maximize a window, then open another app with the launcher. The newly-opened app should be visible and focused.

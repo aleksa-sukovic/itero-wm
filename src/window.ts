@@ -8,7 +8,6 @@ import * as xprop from './xprop.js';
 import type { Entity } from './ecs.js';
 import type { Ext } from './extension.js';
 import type { Rectangle } from './rectangle.js';
-import * as scheduler from './scheduler.js';
 import * as focus from './focus.js';
 
 import Gdk from 'gi://Gdk';
@@ -31,18 +30,11 @@ const WM_TITLE_BLACKLIST: Array<string> = [
     'Tor Browser',
 ];
 
-interface X11Info {
-    normal_hints: once_cell.OnceCell<lib.SizeHint | null>;
-    wm_role_: once_cell.OnceCell<string | null>;
-    xid_: once_cell.OnceCell<string | null>;
-}
-
 export class ShellWindow {
     entity: Entity;
     meta: Meta.Window;
     ext: Ext;
     stack: number | null = null;
-    known_workspace: number;
     grab: boolean = false;
     activate_after_move: boolean = false;
     ignore_detach: boolean = false;
@@ -91,13 +83,7 @@ export class ShellWindow {
 
     window_app: any;
 
-    private was_hidden: boolean = false;
-
-    private extra: X11Info = {
-        normal_hints: new OnceCell(),
-        wm_role_: new OnceCell(),
-        xid_: new OnceCell(),
-    };
+    private xid_: once_cell.OnceCell<string | null> = new OnceCell();
 
     private border_size = 0;
 
@@ -108,7 +94,8 @@ export class ShellWindow {
         this.meta = window;
         this.ext = ext;
 
-        this.known_workspace = this.workspace_id();
+        // Ensure the window belongs to a workspace
+        this.workspace_id();
 
         // Float fullscreen windows by default, such as Kodi.
         if (this.meta.is_fullscreen()) {
@@ -246,29 +233,7 @@ export class ShellWindow {
     decoration_hide(ext: Ext): void {
         if (this.ignore_decoration()) return;
 
-        this.was_hidden = true;
-
         this.decoration(ext, xid => xprop.set_hint(xid, xprop.MOTIF_HINTS, xprop.HIDE_FLAGS));
-    }
-
-    decoration_show(ext: Ext): void {
-        if (!this.was_hidden) return;
-
-        this.decoration(ext, xid => xprop.set_hint(xid, xprop.MOTIF_HINTS, xprop.SHOW_FLAGS));
-    }
-
-    icon(_ext: Ext, size: number): any {
-        let icon = this.window_app.create_icon_texture(size);
-
-        if (!icon) {
-            icon = new St.Icon({
-                icon_name: 'applications-other',
-                icon_type: St.IconType.FULLCOLOR,
-                icon_size: size,
-            });
-        }
-
-        return icon;
     }
 
     ignore_decoration(): boolean {
@@ -418,31 +383,9 @@ export class ShellWindow {
         return Rect.Rectangle.from_meta(this.meta.get_frame_rect());
     }
 
-    size_hint(): lib.SizeHint | null {
-        return this.extra.normal_hints.get_or_init(() => {
-            const xid = this.xid();
-            return xid ? xprop.get_size_hints(xid) : null;
-        });
-    }
-
-    swap(ext: Ext, other: ShellWindow): void {
-        let ar = this.rect().clone();
-        let br = other.rect().clone();
-
-        other.move(ext, ar);
-        this.move(ext, br, () => place_pointer_on(this.ext, this.meta));
-    }
-
     title(): string {
         const title = this.meta.get_title();
         return title ? title : this.name(this.ext);
-    }
-
-    wm_role(): string | null {
-        return this.extra.wm_role_.get_or_init(() => {
-            const xid = this.xid();
-            return xid ? xprop.get_window_role(xid) : null;
-        });
     }
 
     workspace_id(): number {
@@ -456,7 +399,7 @@ export class ShellWindow {
     }
 
     xid(): string | null {
-        return this.extra.xid_.get_or_init(() => {
+        return this.xid_.get_or_init(() => {
             if (utils.is_wayland()) return null;
             return xprop.get_xid(this.meta);
         });
@@ -675,8 +618,6 @@ export function activate(ext: Ext, move_mouse: boolean, win: Meta.Window) {
 
         const workspace = win.get_workspace();
         if (!workspace) return;
-
-        scheduler.setForeground(win);
 
         win.unminimize();
         workspace.activate_with_focus(win, global.get_current_time());

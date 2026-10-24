@@ -197,10 +197,6 @@ export class ExtensionSettings {
         this.ext.set_boolean(STACKING_WITH_MOUSE, set);
     }
 
-    set_column_size(size: number) {
-        this.ext.set_uint(COLUMN_SIZE, size);
-    }
-
     set_edge_tiling(enable: boolean) {
         this.mutter?.set_boolean(EDGE_TILING, enable);
     }
@@ -223,10 +219,6 @@ export class ExtensionSettings {
         }
     }
 
-    set_row_size(size: number) {
-        this.ext.set_uint(ROW_SIZE, size);
-    }
-
     set_snap_to_grid(set: boolean) {
         this.ext.set_boolean(SNAP_TO_GRID, set);
     }
@@ -245,14 +237,6 @@ export class ExtensionSettings {
 
     set_mouse_cursor_focus_location(set: number) {
         this.ext.set_uint(MOUSE_CURSOR_FOCUS_LOCATION, set);
-    }
-
-    set_float_default_width_percentage(set: number) {
-        this.ext.set_uint(FLOAT_DEFAULT_WIDTH_PERCENTAGE, set);
-    }
-
-    set_float_default_height_percentage(set: number) {
-        this.ext.set_uint(FLOAT_DEFAULT_HEIGHT_PERCENTAGE, set);
     }
 
     set_default_window_mode(mode: WindowMode) {

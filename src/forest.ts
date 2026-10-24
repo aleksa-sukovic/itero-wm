@@ -451,24 +451,6 @@ export class Forest extends Ecs.World {
         return reflow_fork;
     }
 
-    /** Creates a string representation of every fork in the world */
-    fmt(ext: Ext) {
-        let fmt = '';
-
-        for (const [entity] of this.toplevel.values()) {
-            const fork = this.forks.get(entity);
-
-            fmt += ' ';
-            if (fork) {
-                fmt += this.display_fork(ext, entity, fork, 1) + '\n';
-            } else {
-                fmt += `Fork(${entity}) Invalid\n`;
-            }
-        }
-
-        return fmt;
-    }
-
     /** Finds the top level fork associated with the given entity. */
     find_toplevel([src_mon, src_work]: [number, number]): Entity | null {
         for (const [entity, fork] of this.forks.iter()) {
@@ -878,43 +860,6 @@ export class Forest extends Ecs.World {
         }
 
         return [entity, fork];
-    }
-
-    private display_branch(ext: Ext, branch: Node.Node, scope: number): string {
-        switch (branch.inner.kind) {
-            case 1:
-                const fork = this.forks.get(branch.inner.entity);
-                return fork ? this.display_fork(ext, branch.inner.entity, fork, scope + 1) : 'Missing Fork';
-            case 2:
-                const window = ext.windows.get(branch.inner.entity);
-                return `Window(${branch.inner.entity}) (${
-                    window ? window.rect().fmt() : 'unknown area'
-                }; parent: ${ext.auto_tiler?.attached.get(branch.inner.entity)})`;
-            case 3:
-                let fmt = 'Stack(';
-
-                for (const entity of branch.inner.entities) {
-                    const window = ext.windows.get(entity);
-                    fmt += `Window(${entity}) (${window ? window.rect().fmt() : 'unknown area'}), `;
-                }
-
-                return fmt + ')';
-        }
-    }
-
-    display_fork(ext: Ext, entity: Entity, fork: Fork.Fork, scope: number): string {
-        let fmt = `Fork(${entity}) [${fork.area ? fork.area.array : 'unknown'}]: {\n`;
-
-        fmt += ' '.repeat((1 + scope) * 2) + `workspace: (${fork.workspace}),\n`;
-        fmt += ' '.repeat((1 + scope) * 2) + 'left: ' + this.display_branch(ext, fork.left, scope) + ',\n';
-        fmt += ' '.repeat((1 + scope) * 2) + 'parent: ' + this.parents.get(fork.entity) + ',\n';
-
-        if (fork.right) {
-            fmt += ' '.repeat((1 + scope) * 2) + 'right: ' + this.display_branch(ext, fork.right, scope) + ',\n';
-        }
-
-        fmt += ' '.repeat(scope * 2) + '}';
-        return fmt;
     }
 }
 

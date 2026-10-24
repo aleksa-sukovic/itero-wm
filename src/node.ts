@@ -15,11 +15,6 @@ export enum NodeKind {
     STACK = 3,
 }
 
-/** Fetch the string representation of this value */
-function node_variant_as_string(value: NodeKind): string {
-    return value == NodeKind.FORK ? 'NodeVariant::Fork' : 'NodeVariant::Window';
-}
-
 /** Identifies this node as a fork */
 export interface NodeFork {
     kind: 1;
@@ -177,23 +172,6 @@ export class Node {
         });
 
         return node;
-    }
-
-    /** Generates a string representation of the this value. */
-    display(fmt: string): string {
-        fmt += `{\n    kind: ${node_variant_as_string(this.inner.kind)},\n    `;
-
-        switch (this.inner.kind) {
-            // Fork + Window
-            case 1:
-            case 2:
-                fmt += `entity: (${this.inner.entity})\n  }`;
-                return fmt;
-            // Stack
-            case 3:
-                fmt += `entities: ${this.inner.entities}\n  }`;
-                return fmt;
-        }
     }
 
     /** Check if the entity exists as a child of this stack */

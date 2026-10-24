@@ -224,7 +224,6 @@ export class Keybindings {
     constructor(ext: Ext) {
         this.ext = ext;
         this.global = {
-            'activate-launcher': () => ext.window_search.open(ext),
             'tile-enter': () => ext.tiler.enter(ext),
             'cycle-window-mode-global': () => ext.cycle_window_mode(),
             'refresh-tiling': () => ext.refresh_tiling(),

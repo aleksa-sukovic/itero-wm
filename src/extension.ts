@@ -14,7 +14,6 @@ import * as ShellRounding from './shell_rounding.js';
 import * as Settings from './settings.js';
 import * as Tiling from './tiling.js';
 import * as Window from './window.js';
-import * as launcher from './launcher.js';
 import * as auto_tiler from './auto_tiler.js';
 import * as node from './node.js';
 import * as utils from './utils.js';
@@ -22,14 +21,11 @@ import * as Executor from './executor.js';
 import * as movement from './movement.js';
 import * as stack from './stack.js';
 import * as add_exception from './dialog_add_exception.js';
-import * as exec from './executor.js';
 import * as dbus_service from './dbus_service.js';
-import * as scheduler from './scheduler.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import type { Entity } from './ecs.js';
 import type { ExtEvent } from './events.js';
 import { Rectangle } from './rectangle.js';
-import type { Launcher } from './launcher.js';
 
 import { Fork } from './fork.js';
 
@@ -55,13 +51,11 @@ const { cursor_rect, is_keyboard_op, is_resize_op, is_move_op } = Lib;
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 const { layoutManager, loadTheme, overview, panel, setThemeStylesheet, screenShield, sessionMode, windowAttentionHandler } = Main;
 import { ScreenShield } from 'resource:///org/gnome/shell/ui/screenShield.js';
-import { PACKAGE_VERSION } from 'resource:///org/gnome/shell/misc/config.js';
 import * as Tags from './tags.js';
 import { get_current_path } from './paths.js';
 
 const STYLESHEET_PATHS = ['light', 'dark', 'highcontrast'].map(stylesheet_path);
 const STYLESHEETS = STYLESHEET_PATHS.map(path => Gio.File.new_for_path(path));
-const GNOME_VERSION = PACKAGE_VERSION;
 
 enum Style {
     Light,
@@ -102,20 +96,12 @@ export class Ext extends Ecs.System<ExtEvent> {
     /** An overlay which shows a preview of where a window will be moved */
     overlay: St.Widget = new St.BoxLayout({ style_class: 'itero-wm-overlay', visible: false });
 
-    /** The application launcher, focus search, and calculator dialog */
-    window_search: Launcher = new launcher.Launcher(this);
-
     /** DBus */
     dbus: dbus_service.Service = new dbus_service.Service();
 
     // State
 
-    /** Animate window movements */
-    animate_windows: boolean = true;
-
     conf: Config.Config = new Config.Config();
-
-    conf_watch: null | [any, SignalID] = null;
 
     /** Column sizes in snap-to-grid */
     column_size: number = 32;
@@ -205,9 +191,6 @@ export class Ext extends Ecs.System<ExtEvent> {
     /** Store for names associated with windows */
     names: Ecs.Storage<string> = this.register_storage();
 
-    /** Signal ID which handles size-changed signals */
-    size_changed_signal: SignalID = 0;
-
     /** Store for size-changed signals attached to each window */
     size_signals: Ecs.Storage<SignalID[]> = this.register_storage();
 
@@ -257,7 +240,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.dbus.FocusDown = () => this.focus_down();
         this.dbus.FocusLeft = () => this.focus_left();
         this.dbus.FocusRight = () => this.focus_right();
-        this.dbus.Launcher = () => this.window_search.open(this);
 
         this.dbus.WindowFocus = (window: [number, number]) => {
             const target_window = this.windows.get(window);
@@ -265,7 +247,6 @@ export class Ext extends Ecs.System<ExtEvent> {
                 target_window.activate();
                 this.on_focused(target_window);
             }
-            this.window_search.close();
         };
 
         this.dbus.WindowList = (): Array<[[number, number], string, string, string]> => {
@@ -281,7 +262,6 @@ export class Ext extends Ecs.System<ExtEvent> {
 
         this.dbus.WindowQuit = (win: [number, number]) => {
             this.windows.get(win)?.meta.delete(global.get_current_time());
-            this.window_search.close();
         };
     }
 
@@ -466,11 +446,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         return wom.get_active_workspace_index();
     }
 
-    actor_of(entity: Entity): null | Clutter.Actor {
-        const window = this.windows.get(entity);
-        return window ? window.meta.get_compositor_private() : null;
-    }
-
     /// Connects a callback signal to a GObject, and records the signal.
     connect(object: GObject.Object, property: string, callback: (...args: any) => boolean | void): SignalID {
         const signal = object.connect(property, callback);
@@ -615,22 +590,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     exit_modes() {
         this.tiler.exit(this);
-        this.window_search.reset();
-        this.window_search.close();
         this.overlay.visible = false;
-    }
-
-    find_monitor_to_retach(width: number, height: number): [number, Display] {
-        if (!this.settings.workspaces_only_on_primary()) {
-            for (const [index, display] of this.displays[1]) {
-                if (display.area.width == width && display.area.height == height) {
-                    return [index, display];
-                }
-            }
-        }
-
-        const primary = display.get_primary_monitor();
-        return [primary, this.displays[1].get(primary) as Display];
     }
 
     find_unused_workspace(monitor: number): [number, any] {
@@ -852,11 +812,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         return true;
     }
 
-    monitor_area(monitor: number): Rectangle | null {
-        const rect = global.display.get_monitor_geometry(monitor);
-        return rect ? Rect.Rectangle.from_meta(rect as Rectangular) : null;
-    }
-
     on_active_workspace_changed() {
         this.prev_focused = [null, null];
 
@@ -983,14 +938,9 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.delete_entity(win);
     }
 
-    on_display_move(_from_id: number, _to_id: number) {
-        if (!this.auto_tiler) return;
-    }
-
     /** Triggered when a window has been focused */
     on_focused(win: Window.ShellWindow) {
         this.workspace_active.set(this.active_workspace(), win.entity);
-        scheduler.setForeground(win.meta);
 
         this.size_signals_unblock(win);
 
@@ -2153,8 +2103,6 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     /** Begin listening for signals from windows, and add any pre-existing windows. */
     signals_attach() {
-        // this.conf_watch = this.attach_config();
-
         this.tiler.queue.start(100, movement => {
             movement();
             return true;
@@ -2182,7 +2130,7 @@ export class Ext extends Ecs.System<ExtEvent> {
             this.focus_window()?.restack();
         });
 
-        this.size_changed_signal = this.connect(wim, 'size-change', (_, actor, event, _before, _after) => {
+        this.connect(wim, 'size-change', (_, actor, event, _before, _after) => {
             if (this.auto_tiler) {
                 let win = this.get_window(actor.get_meta_window());
                 if (!win) return;
@@ -2318,24 +2266,13 @@ export class Ext extends Ecs.System<ExtEvent> {
             this.register({ tag: 3, window });
         });
 
-        if (GNOME_VERSION?.startsWith('3.')) {
-            this.connect(display, 'grab-op-begin', (_, _display, win, op) => {
-                this.on_grab_start(win, op);
-            });
+        this.connect(display, 'grab-op-begin', (_display, win, op) => {
+            this.on_grab_start(win, op);
+        });
 
-            this.connect(display, 'grab-op-end', (_, _display, win, op) => {
-                this.register_fn(() => this.on_grab_end(win, op));
-            });
-        } else {
-            // GNOME 40 removed the first argument of the callback
-            this.connect(display, 'grab-op-begin', (_display, win, op) => {
-                this.on_grab_start(win, op);
-            });
-
-            this.connect(display, 'grab-op-end', (_display, win, op) => {
-                this.register_fn(() => this.on_grab_end(win, op));
-            });
-        }
+        this.connect(display, 'grab-op-end', (_display, win, op) => {
+            this.register_fn(() => this.on_grab_end(win, op));
+        });
 
         this.connect(overview, 'window-drag-begin', (_, win) => {
             this.on_grab_start(win, 1);
@@ -2391,22 +2328,9 @@ export class Ext extends Ecs.System<ExtEvent> {
             }
         }
 
-        if (this.conf_watch) {
-            this.conf_watch[0].disconnect(this.conf_watch[1]);
-            this.conf_watch = null;
-        }
-
         this.tiler.queue.stop();
 
         this.signals.clear();
-    }
-
-    size_changed_block() {
-        utils.block_signal(wim, this.size_changed_signal);
-    }
-
-    size_changed_unblock() {
-        utils.unblock_signal(wim, this.size_changed_signal);
     }
 
     size_signals_block(win: Window.ShellWindow) {
@@ -2429,10 +2353,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.workspace_by_id(id)?.activate(global.get_current_time());
     }
 
-    stop_launcher_services() {
-        this.window_search.stop_services(this);
-    }
-
     tab_list(tablist: number, workspace: Meta.Workspace | null): Array<Window.ShellWindow> {
         const windows = display.get_tab_list(tablist, workspace);
 
@@ -2444,14 +2364,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
 
         return matched;
-    }
-
-    *tiled_windows(): IterableIterator<Entity> {
-        for (const entity of this.entities()) {
-            if (this.contains_tag(entity, Tags.Tiled)) {
-                yield entity;
-            }
-        }
     }
 
     /// If the auto-tilable status of a window has changed, detach or attach the window.
@@ -2586,8 +2498,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.moved_by_mouse = false;
     }
 
-    update_display_configuration_before() {}
-
     update_display_configuration(workareas_only: boolean) {
         if (!this.auto_tiler || sessionMode.isLocked) return;
 
@@ -2671,7 +2581,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         const apply_migrations = (assigned_monitors: Set<number>) => {
             if (!migrations) return;
 
-            new exec.OnceExecutor<Migration, Migration[]>(migrations).start(
+            new Executor.OnceExecutor<Migration, Migration[]>(migrations).start(
                 500,
                 ([fork, new_monitor, workspace, find_workspace]) => {
                     let new_workspace;
@@ -2965,7 +2875,6 @@ export class Ext extends Ecs.System<ExtEvent> {
 
         let floating_tagged = this.contains_tag(window.entity, Tags.Floating);
         let force_tiled_tagged = this.contains_tag(window.entity, Tags.ForceTile);
-        // Tags.Tiled does not seem to matter, so not checking here
 
         return (floating_tagged && !force_tiled_tagged) || (shall_float && !force_tiled_tagged);
     }
@@ -3023,9 +2932,7 @@ export default class IteroWMExtension extends Extension {
             ext.rounding.disable();
             ext.shell_rounding.disable();
             ext.exit_modes();
-            ext.stop_launcher_services();
             ext.hide_all_borders();
-            ext.window_search.remove_injections();
 
             layoutManager.removeChrome(ext.overlay);
 
