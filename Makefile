@@ -21,11 +21,14 @@ PROJECTS = floating_exceptions
 
 $(info UUID is "$(UUID)")
 
-.PHONY: all clean install zip-file
+.PHONY: all clean install zip-file test
 
 sources = src/*.ts *.css
 
 all: depcheck compile
+
+test: all
+	node --experimental-vm-modules --test tests/*.test.mjs
 
 clean:
 	rm -rf _build target tsconfig.tsbuildinfo

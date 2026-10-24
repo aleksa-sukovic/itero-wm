@@ -1,5 +1,7 @@
 # Testing
 
+Run `make test` for the build and automated regression checks. Desktop checks below still require a GNOME session.
+
 This document provides a guideline for testing and verifying the expected behaviors of the project. When a patch is ready for testing, the checklists may be copied and marked as they are proven to be working.
 
 ## Logs

@@ -71,6 +71,7 @@ const RoundedCornersEffect = GObject.registerClass(
     {},
     class extends Shell.GLSLEffect {
         private uniforms = new Uniforms();
+        private last_inputs: number[] | null = null;
 
         constructor() {
             super();
@@ -81,15 +82,21 @@ const RoundedCornersEffect = GObject.registerClass(
         }
 
         vfunc_build_pipeline() {
+            this.last_inputs = null;
             this.add_glsl_snippet(Cogl.SnippetHook.FRAGMENT, DECLARATIONS, CODE, false);
         }
 
         update(bounds: number[], corner_radii: number[]) {
             if (this.actor.width === 0 || this.actor.height === 0) return;
 
+            const inputs = [...bounds, ...corner_radii, this.actor.width, this.actor.height];
+            const previous = this.last_inputs;
+            if (previous && inputs.length === previous.length && inputs.every((value, index) => value === previous[index])) return;
+
             this.set_uniform_float(this.uniforms.bounds, 4, bounds);
             this.set_uniform_float(this.uniforms.cornerRadii, 4, corner_radii);
             this.set_uniform_float(this.uniforms.pixelStep, 2, [1 / this.actor.width, 1 / this.actor.height]);
+            this.last_inputs = inputs;
             this.queue_repaint();
         }
     },
