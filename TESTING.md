@@ -113,6 +113,8 @@ Tasks for a tester to verify when approving a patch. Use complex window layouts 
 
 ### Floating Exceptions
 
+- [ ] Exception windows keep their requested size, even when their title or class arrives late.
+- [ ] Minimizing and restoring an exception window does not tile it.
 - [ ] Add a window to floating exceptions-- it should float immediately.
 - [ ] Close and re-open the window-- it should float when opened.
 - [ ] Add an app to floating exceptions-- it should float immediately.

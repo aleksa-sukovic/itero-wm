@@ -49,6 +49,7 @@ export class ShellWindow {
     was_attached_to?: [Entity, boolean | number];
     destroying: boolean = false;
     new_window_managed: boolean = false;
+    initial_floating_rect: null | Rectangle = null;
 
     // Awaiting reassignment after a display update
     reassignment: boolean = false;
@@ -615,6 +616,8 @@ export class ShellWindow {
     }
 
     private wm_class_changed() {
+        this.apply_floating_exception();
+
         if (this.is_tilable(this.ext)) {
             this.ext.connect_window(this);
             if (!this.meta.minimized && !this.new_window_managed) {
@@ -626,18 +629,21 @@ export class ShellWindow {
     private title_changed() {
         this.ext.show_border_on_focused();
 
-        const wm_class = this.meta.get_wm_class();
-        if (wm_class === null || this.ext.contains_tag(this.entity, Tags.ForceTile)) {
-            return;
-        }
+        this.apply_floating_exception();
+    }
 
-        if (!this.ext.conf.window_shall_float(wm_class, this.title())) {
+    private apply_floating_exception() {
+        if (this.ext.contains_tag(this.entity, Tags.ForceTile) || !this.has_floating_exception(this.ext)) {
             return;
         }
 
         if (this.ext.auto_tiler?.attached.get(this.entity)) {
             this.ext.auto_tiler.detach_window(this.ext, this.entity);
-            this.ext.center_floating(this);
+        }
+
+        if (this.initial_floating_rect) {
+            this.move(this.ext, this.initial_floating_rect);
+            this.initial_floating_rect = null;
         }
     }
 

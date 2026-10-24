@@ -795,13 +795,21 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     /** Reapply the configured floating geometry after client startup requests settle. */
     private center_new_floating(win: Window.ShellWindow) {
+        win.initial_floating_rect = win.rect().clone();
         this.center_floating(win);
 
         for (const delay of [250, 1000, 2000]) {
             GLib.timeout_add(GLib.PRIORITY_LOW, delay, () => {
-                if (win.actor_exists() && !win.meta.minimized && win.stack === null && this.is_floating(win)) {
+                if (
+                    win.actor_exists() &&
+                    !win.meta.minimized &&
+                    win.stack === null &&
+                    this.is_floating(win) &&
+                    !win.has_floating_exception(this)
+                ) {
                     this.center_floating(win);
                 }
+                if (delay === 2000) win.initial_floating_rect = null;
                 return false;
             });
         }
@@ -1827,7 +1835,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
                 win.was_attached_to = [attached, attachment];
                 this.auto_tiler.detach_window(this, win.entity);
-            } else if (!this.contains_tag(win.entity, Tags.Floating)) {
+            } else if (win.is_tilable(this)) {
                 if (win.was_attached_to) {
                     const [entity, attachment] = win.was_attached_to;
                     delete win.was_attached_to;
@@ -1904,7 +1912,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
             if (win.is_tilable(this)) {
                 this.connect_window(win);
-            } else if (this.auto_tiler && this.is_floating(win)) {
+            } else if (this.auto_tiler && this.is_floating(win) && !win.has_floating_exception(this)) {
                 this.center_floating(win);
             }
         }
