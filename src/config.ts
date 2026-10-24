@@ -239,10 +239,21 @@ export class Config {
     }
 }
 
+const pattern_cache = new Map<string, RegExp>();
+
+function matches_pattern(pattern: string, value: string): boolean {
+    let expression = pattern_cache.get(pattern);
+    if (!expression) {
+        expression = new RegExp(pattern, "i");
+        pattern_cache.set(pattern, expression);
+    }
+    return expression.test(value);
+}
+
 function matches_window_rule(rules: FloatRule[], wclass: string, title: string): boolean {
     for (const rule of rules) {
-        if (rule.class && !new RegExp(rule.class, 'i').test(wclass)) continue;
-        if (rule.title && !new RegExp(rule.title, 'i').test(title)) continue;
+        if (rule.class && !matches_pattern(rule.class, wclass)) continue;
+        if (rule.title && !matches_pattern(rule.title, title)) continue;
 
         return !rule.disabled;
     }
