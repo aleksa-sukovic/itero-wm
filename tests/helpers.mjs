@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import vm from "node:vm";
+import ts from "typescript";
 
 export async function load_module(file, mocks, globals = {}) {
     const context = vm.createContext(globals);
@@ -14,4 +15,12 @@ export async function load_module(file, mocks, globals = {}) {
     });
     await module.evaluate();
     return module.namespace;
+}
+
+export function load_method(file, class_name, name, scope = {}) {
+    const path = new URL(`../target/${file}`, import.meta.url);
+    const source = ts.createSourceFile(file, fs.readFileSync(path, "utf8"), ts.ScriptTarget.Latest, true);
+    const declaration = source.statements.find(node => ts.isClassDeclaration(node) && node.name.text === class_name);
+    const method = declaration.members.find(node => node.name?.getText(source) === name);
+    return Function(...Object.keys(scope), `return ({${method.getText(source)}}).${name}`)(...Object.values(scope));
 }

@@ -501,6 +501,8 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     connect_window(win: Window.ShellWindow) {
+        if (this.size_signals.contains(win.entity)) return;
+
         const size_event = () => {
             const old = this.size_requests.get(win.meta);
 
