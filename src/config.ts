@@ -61,6 +61,13 @@ export const DEFAULT_FLOAT_RULES: Array<FloatRule> = [
     { class: 'gjs' },
 ];
 
+export const INITIAL_TITLE_RULES = [
+    {
+        class: /(^|\.)firefox$/i,
+        titles: [/^$/, /^Mozilla Firefox$/, /^about:blank(?:\s|$)/i],
+    },
+];
+
 export class Config {
     /** List of windows that should float, regardless of their WM hints */
     float: Array<FloatRule> = [];
@@ -89,6 +96,12 @@ export class Config {
 
         this.float.push({ class: wmclass, title });
         this.sync_to_disk();
+    }
+
+    window_has_pending_title(wclass: string, title: string): boolean {
+        return INITIAL_TITLE_RULES.some(rule =>
+            rule.class.test(wclass) && rule.titles.some(pattern => pattern.test(title)),
+        );
     }
 
     window_shall_float(wclass: string, title: string): boolean {

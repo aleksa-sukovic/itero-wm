@@ -7,11 +7,11 @@ async function fixture() {
     class CountingRegExp extends RegExp {
         constructor(...args) { super(...args); compilations++; }
     }
-    const {Config} = await load_module("config.js", {
+    const {Config, INITIAL_TITLE_RULES} = await load_module("config.js", {
         "gi://GLib": {default: {get_user_config_dir: () => "/tmp"}},
         "gi://Gio": {default: {}},
     }, {RegExp: CountingRegExp});
-    return {Config, config: new Config(), compilations: () => compilations};
+    return {Config, initial_title_rules: INITIAL_TITLE_RULES, config: new Config(), compilations: () => compilations};
 }
 
 test("repeated float and border matches reuse compiled expressions", async () => {
@@ -68,4 +68,22 @@ test("invalid expressions still fail only when their rule is reached", async () 
     f.config.active_border_exclusions = [{class: "ExampleApp"}, {class: "["}];
     assert.equal(f.config.window_shall_hide_border("ExampleApp", ""), true);
     assert.throws(() => f.config.window_shall_hide_border("OtherApp", ""), SyntaxError);
+});
+
+test("initial title rules match only the configured window classes and placeholders", async () => {
+    const f = await fixture();
+    for (const title of ["", "Mozilla Firefox", "about:blank", "about:blank - — Mozilla Firefox"]) {
+        assert.equal(f.config.window_has_pending_title("org.mozilla.firefox", title), true);
+        assert.equal(f.config.window_has_pending_title("OtherApp", title), false);
+    }
+    assert.equal(f.config.window_has_pending_title("firefox", "Mozilla Firefox"), true);
+    assert.equal(f.config.window_has_pending_title("org.mozilla.firefox", "New Tab — Mozilla Firefox"), false);
+});
+
+test("additional applications use the same initial title rule matcher", async () => {
+    const f = await fixture();
+    f.initial_title_rules.push({class: /^ExampleApp$/, titles: [/^Loading$/]});
+    assert.equal(f.config.window_has_pending_title("ExampleApp", "Loading"), true);
+    assert.equal(f.config.window_has_pending_title("ExampleApp", "Document"), false);
+    assert.equal(f.config.window_has_pending_title("OtherApp", "Loading"), false);
 });

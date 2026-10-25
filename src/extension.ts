@@ -777,11 +777,23 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
     }
 
-    manage_new_window(win: Window.ShellWindow): boolean {
+    manage_new_window(win: Window.ShellWindow, wait_for_title: boolean = true): boolean {
         const tiler = this.auto_tiler;
         if (!tiler || win.meta.minimized || !win.is_tilable(this)) return false;
         if (win.new_window_managed) return true;
 
+        if (wait_for_title && !this.init && win.has_pending_initial_title() && !this.contains_tag(win.entity, Tags.ForceTile)) {
+            if (win.initial_title_wait_id === null) {
+                win.initial_title_wait_id = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
+                    win.initial_title_wait_id = null;
+                    if (win.actor_exists()) this.manage_new_window(win, false);
+                    return false;
+                });
+            }
+            return false;
+        }
+
+        win.cancel_initial_title_wait();
         win.new_window_managed = true;
         const active_stack = this.stack_for(win);
         const mode = active_stack?.[0].new_window_mode ?? this.settings.default_window_mode();
@@ -875,6 +887,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         const stack = window.stack;
 
         window.destroying = true;
+        window.cancel_initial_title_wait();
 
         if (window.border) {
             window.border.destroy();

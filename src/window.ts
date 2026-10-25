@@ -41,6 +41,7 @@ export class ShellWindow {
     was_attached_to?: [Entity, boolean | number];
     destroying: boolean = false;
     new_window_managed: boolean = false;
+    initial_title_wait_id: SignalID | null = null;
     initial_floating_rect: null | Rectangle = null;
 
     // Awaiting reassignment after a display update
@@ -558,6 +559,17 @@ export class ShellWindow {
         }
     }
 
+    has_pending_initial_title(): boolean {
+        return this.ext.conf.window_has_pending_title(this.meta.get_wm_class() ?? "", this.meta.get_title() ?? "");
+    }
+
+    cancel_initial_title_wait() {
+        if (this.initial_title_wait_id !== null) {
+            GLib.source_remove(this.initial_title_wait_id);
+            this.initial_title_wait_id = null;
+        }
+    }
+
     private wm_class_changed() {
         this.apply_floating_exception();
 
@@ -573,12 +585,21 @@ export class ShellWindow {
         this.ext.show_border_on_focused();
 
         this.apply_floating_exception();
+
+        if (this.initial_title_wait_id !== null && !this.has_pending_initial_title()) {
+            this.cancel_initial_title_wait();
+            this.ext.manage_new_window(this, false);
+        }
     }
 
     private apply_floating_exception() {
+        if (this.initial_title_wait_id !== null && this.has_pending_initial_title()) return;
+
         if (this.ext.contains_tag(this.entity, Tags.ForceTile) || !this.has_floating_exception(this.ext)) {
             return;
         }
+
+        this.cancel_initial_title_wait();
 
         if (this.ext.auto_tiler?.attached.get(this.entity)) {
             this.ext.auto_tiler.detach_window(this.ext, this.entity);
